@@ -3,7 +3,14 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, seedDatabaseIfEmpty } from '../db/database';
 import type { Expense, Category, Budget, AppSettings, ExpenseFilter } from '../types';
 import { DEFAULT_CATEGORIES } from '../utils/mockData';
-import { fetchRoomExpenses, pushExpenseToPartner, deleteExpenseFromPartner } from '../services/partnerSyncService';
+import { 
+  fetchRoomExpenses, 
+  pushExpenseToPartner, 
+  deleteExpenseFromPartner,
+  createInviteCode as createInviteCodeApi,
+  redeemInviteCode as redeemInviteCodeApi,
+  unlinkPartnership as unlinkPartnershipApi
+} from '../services/partnerSyncService';
 
 interface ExpenseContextType {
   expenses: Expense[];
@@ -29,6 +36,9 @@ interface ExpenseContextType {
   setFilter: (newFilter: Partial<ExpenseFilter>) => void;
   resetFilter: () => void;
   syncPartnerRoom: () => Promise<void>;
+  generateInviteCode: () => Promise<{ code: string; expiresAt: number }>;
+  redeemInviteCode: (code: string) => Promise<{ success: boolean; error?: string }>;
+  unlinkPartner: () => Promise<void>;
   importBackupJSON: (jsonString: string) => Promise<boolean>;
   exportBackupJSON: () => Promise<string>;
   resetAllData: () => Promise<void>;
@@ -326,6 +336,53 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setFilterState(defaultFilter);
   };
 
+  const generateInviteCode = async (): Promise<{ code: string; expiresAt: number }> => {
+    const res = await createInviteCodeApi(
+      settings.userId || 'unknown',
+      settings.userName || 'Partner',
+      settings.profilePhoto
+    );
+    return res;
+  };
+
+  const redeemInviteCode = async (code: string): Promise<{ success: boolean; error?: string }> => {
+    const res = await redeemInviteCodeApi(
+      code,
+      settings.userId || 'unknown',
+      settings.userName || 'Partner',
+      settings.profilePhoto
+    );
+
+    if (res.success && res.partnership) {
+      await updateSettings({
+        partnerCode: res.partnership.roomCode,
+        partnershipId: res.partnership.partnershipId,
+        partnerUserId: res.partnership.partnerUserId,
+        partnerName: res.partnership.partnerName,
+        partnerPhoto: res.partnership.partnerPhoto,
+        syncEnabled: true,
+      });
+      syncPartnerRoom();
+    }
+
+    return { success: res.success, error: res.error };
+  };
+
+  const unlinkPartner = async (): Promise<void> => {
+    if (settings.partnershipId) {
+      await unlinkPartnershipApi(settings.partnershipId);
+    }
+    await updateSettings({
+      partnerCode: '',
+      partnershipId: '',
+      partnerUserId: '',
+      partnerName: '',
+      partnerPhoto: '',
+      syncEnabled: false,
+    });
+    setPartnerExpenses([]);
+  };
+
   const exportBackupJSON = async (): Promise<string> => {
     const allExp = await db.expenses.toArray();
     const allCategories = await db.categories.toArray();
@@ -404,6 +461,9 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setFilter,
         resetFilter,
         syncPartnerRoom,
+        generateInviteCode,
+        redeemInviteCode,
+        unlinkPartner,
         importBackupJSON,
         exportBackupJSON,
         resetAllData,

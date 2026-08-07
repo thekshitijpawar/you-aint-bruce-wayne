@@ -64,12 +64,26 @@ export interface SpendingStats {
 
 export type CurrencySymbol = string; // Allows complete freedom for any currency symbol or code
 
+export interface Partnership {
+  partnershipId: string;
+  partnerUserId: string;
+  partnerName: string;
+  partnerPhoto?: string;
+  roomCode: string;
+  status: 'active' | 'unlinked';
+  createdAt: number;
+}
+
 export interface AppSettings {
   theme?: 'light' | 'dark';
   profilePhoto?: string;
   userName?: string;
   userId?: string;                     // Unique device/user UUID
   partnerCode?: string;                // Shared Household Sync Code (e.g. WAYNE7)
+  partnershipId?: string;              // Active Partnership ID
+  partnerUserId?: string;              // Linked Partner's Unique User ID
+  partnerName?: string;                // Linked Partner's Display Name
+  partnerPhoto?: string;               // Linked Partner's Photo
   syncEnabled?: boolean;               // Whether partner sync is active
   hasCompletedOnboarding?: boolean;
   currency: CurrencySymbol;

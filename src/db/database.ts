@@ -31,11 +31,13 @@ export const seedDatabaseIfEmpty = async (): Promise<void> => {
 
   const settingsCount = await db.settings.count();
   if (settingsCount === 0) {
+    const initialUserId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     await db.settings.add({
       id: 'default',
       currency: '$',
       city: 'New York',
       userName: '',
+      userId: initialUserId,
       profilePhoto: '',
       hasCompletedOnboarding: false,
       firstDayOfWeek: 'Monday',
