@@ -1,7 +1,5 @@
 import type { Expense } from '../types';
 
-const SYNC_RELAY_BASE = import.meta.env.VITE_PARTNER_SYNC_URL || 'https://brucewayne-sync-default-rtdb.firebaseio.com/rooms';
-
 export const generatePartnerCode = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
@@ -12,15 +10,12 @@ export const generatePartnerCode = (): string => {
 };
 
 /**
- * Pushes a sanitized local expense payload to the shared partner room endpoint
+ * Pushes a local expense payload to the shared partner room relays
  */
 export const pushExpenseToPartner = async (partnerCode: string, expense: Expense): Promise<void> => {
   if (!partnerCode) return;
   const cleanCode = partnerCode.trim().toUpperCase();
-  const expId = expense.createdAt ? String(expense.createdAt) : String(Date.now());
-  const url = `${SYNC_RELAY_BASE}/${cleanCode}/expenses/${expId}.json`;
 
-  // Sanitize payload: include only public transaction fields needed for partner sync
   const sanitizedPayload: Partial<Expense> = {
     amount: expense.amount,
     categoryId: expense.categoryId,
@@ -30,18 +25,33 @@ export const pushExpenseToPartner = async (partnerCode: string, expense: Expense
     city: expense.city || '',
     notes: expense.notes || '',
     createdAt: expense.createdAt,
+    userId: expense.userId || '',
     userName: expense.userName || 'User',
     userPhoto: expense.userPhoto || '',
   };
 
+  const payloadString = JSON.stringify(sanitizedPayload);
+
+  // Relay 1: Real-time ntfy.sh messaging relay
   try {
-    await fetch(url, {
-      method: 'PUT',
+    await fetch(`https://ntfy.sh/brucewayne_sync_${cleanCode}`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sanitizedPayload),
+      body: payloadString,
     });
-  } catch (error) {
-    // Silent error handling - do not print sensitive payload data
+  } catch (e) {
+    // ignore
+  }
+
+  // Relay 2: Vercel serverless function backup relay
+  try {
+    await fetch(`/api/sync?room=${cleanCode}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payloadString,
+    });
+  } catch (e) {
+    // ignore
   }
 };
 
@@ -51,31 +61,65 @@ export const pushExpenseToPartner = async (partnerCode: string, expense: Expense
 export const deleteExpenseFromPartner = async (partnerCode: string, expenseCreatedAt: number): Promise<void> => {
   if (!partnerCode || !expenseCreatedAt) return;
   const cleanCode = partnerCode.trim().toUpperCase();
-  const url = `${SYNC_RELAY_BASE}/${cleanCode}/expenses/${expenseCreatedAt}.json`;
 
   try {
-    await fetch(url, { method: 'DELETE' });
-  } catch (error) {
-    // Silent error handling
+    await fetch(`/api/sync?room=${cleanCode}&createdAt=${expenseCreatedAt}`, {
+      method: 'DELETE',
+    });
+  } catch (e) {
+    // ignore
   }
 };
 
 /**
- * Fetches all shared partner expenses from the room
+ * Fetches all shared partner expenses from room relays
  */
 export const fetchRoomExpenses = async (partnerCode: string): Promise<Expense[]> => {
   if (!partnerCode) return [];
   const cleanCode = partnerCode.trim().toUpperCase();
-  const url = `${SYNC_RELAY_BASE}/${cleanCode}/expenses.json`;
+  const itemsMap = new Map<number, Expense>();
 
+  // 1. Fetch from ntfy.sh poll relay
   try {
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (!data) return [];
+    const res = await fetch(`https://ntfy.sh/brucewayne_sync_${cleanCode}/json?poll=1`);
+    if (res.ok) {
+      const text = await res.text();
+      const lines = text.split('\n').filter(Boolean);
 
-    return Object.values(data) as Expense[];
-  } catch (error) {
-    return [];
+      for (const line of lines) {
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.event === 'message' && parsed.message) {
+            const exp = typeof parsed.message === 'string' ? JSON.parse(parsed.message) : parsed.message;
+            if (exp && exp.createdAt && exp.amount) {
+              itemsMap.set(exp.createdAt, exp);
+            }
+          }
+        } catch (err) {
+          // ignore single line error
+        }
+      }
+    }
+  } catch (e) {
+    // ignore
   }
+
+  // 2. Fetch from Vercel Serverless Function relay
+  try {
+    const res = await fetch(`/api/sync?room=${cleanCode}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        data.forEach((exp: Expense) => {
+          if (exp && exp.createdAt && exp.amount) {
+            itemsMap.set(exp.createdAt, exp);
+          }
+        });
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  return Array.from(itemsMap.values()).sort((a, b) => b.createdAt - a.createdAt);
 };

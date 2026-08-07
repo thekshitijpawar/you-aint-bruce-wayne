@@ -114,7 +114,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [settings.theme]);
 
-  // Partner Room Polling Sync
+  // Partner Room Polling Sync (Fast 3-Second Real-Time Sync like Flo app)
   const syncPartnerRoom = useCallback(async () => {
     if (!settings.partnerCode) {
       setPartnerExpenses([]);
@@ -122,21 +122,23 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     const fetched = await fetchRoomExpenses(settings.partnerCode);
-    const localUser = settings.userName || 'User';
-    
+    const localUserId = settings.userId || '';
+    const localUserName = settings.userName || '';
+
     // Filter out expenses logged by current device so we only get partner's expenses
     const roomPartnerItems = fetched.filter(item => {
-      if (item.userName && item.userName === localUser) return false;
+      if (item.userId && localUserId && item.userId === localUserId) return false;
+      if (item.userName && localUserName && item.userName === localUserName && (!item.userId || item.userId === localUserId)) return false;
       return true;
     });
 
     setPartnerExpenses(roomPartnerItems);
-  }, [settings.partnerCode, settings.userName]);
+  }, [settings.partnerCode, settings.userId, settings.userName]);
 
   useEffect(() => {
     if (settings.partnerCode) {
       syncPartnerRoom();
-      const interval = setInterval(syncPartnerRoom, 8000);
+      const interval = setInterval(syncPartnerRoom, 3000);
       return () => clearInterval(interval);
     } else {
       setPartnerExpenses([]);
@@ -212,7 +214,8 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const id = await db.expenses.add(newExpenseData);
 
     if (settings.partnerCode) {
-      pushExpenseToPartner(settings.partnerCode, newExpenseData);
+      await pushExpenseToPartner(settings.partnerCode, newExpenseData);
+      syncPartnerRoom();
     }
 
     return id as number;
@@ -229,7 +232,8 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (settings.partnerCode && existing) {
       const fullUpdated = { ...existing, ...updated };
-      pushExpenseToPartner(settings.partnerCode, fullUpdated);
+      await pushExpenseToPartner(settings.partnerCode, fullUpdated);
+      syncPartnerRoom();
     }
   };
 
