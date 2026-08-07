@@ -20,6 +20,13 @@ export const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
   const [date, setDate] = useState<string>(expenseToEdit ? expenseToEdit.date : getTodayDateString());
   const [notes, setNotes] = useState<string>(expenseToEdit ? expenseToEdit.notes || '' : '');
 
+  React.useEffect(() => {
+    if (isOpen && expenseToEdit && expenseToEdit.userName && expenseToEdit.userName !== settings.userName) {
+      alert("Partner's expenses can only be edited or deleted on their own phone.");
+      onClose();
+    }
+  }, [isOpen, expenseToEdit, settings.userName, onClose]);
+
   if (!isOpen) return null;
 
   const handleKeypadVal = (val: string) => {

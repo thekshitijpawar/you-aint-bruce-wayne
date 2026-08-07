@@ -345,17 +345,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--on-surface)' }}>
-                      -{formatCurrency(exp.amount, settings.currency)}
-                    </div>
-                    <button onClick={() => onEditExpense(exp)} style={{ background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit</span>
-                    </button>
-                    <button onClick={() => exp.id && deleteExpense(exp.id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
-                    </button>
-                  </div>
+                  {(() => {
+                    const isMine = !exp.userName || exp.userName === settings.userName;
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--on-surface)' }}>
+                          -{formatCurrency(exp.amount, settings.currency)}
+                        </div>
+                        {isMine && (
+                          <>
+                            <button onClick={() => onEditExpense(exp)} style={{ background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer' }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit</span>
+                            </button>
+                            <button onClick={() => exp.id && deleteExpense(exp.id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

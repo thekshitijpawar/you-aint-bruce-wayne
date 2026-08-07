@@ -279,17 +279,26 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 12, flexShrink: 0 }}>
-                        <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--on-surface)' }}>
-                          -{formatCurrency(exp.amount, settings.currency)}
-                        </p>
-                        <button onClick={() => onEditExpense(exp)} style={{ background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer', padding: 2 }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit</span>
-                        </button>
-                        <button onClick={() => exp.id && deleteExpense(exp.id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', padding: 2 }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
-                        </button>
-                      </div>
+                      {(() => {
+                        const isMine = !exp.userName || exp.userName === settings.userName;
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 12, flexShrink: 0 }}>
+                            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--on-surface)' }}>
+                              -{formatCurrency(exp.amount, settings.currency)}
+                            </p>
+                            {isMine && (
+                              <>
+                                <button onClick={() => onEditExpense(exp)} style={{ background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer', padding: 2 }}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit</span>
+                                </button>
+                                <button onClick={() => exp.id && deleteExpense(exp.id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', padding: 2 }}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}

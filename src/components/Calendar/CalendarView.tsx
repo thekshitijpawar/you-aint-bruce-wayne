@@ -307,8 +307,13 @@ export const CalendarView: React.FC<CalendarViewProps> = () => {
                           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
                             {formatTimeDisplay(exp.time)} — {category?.name || exp.categoryId}
                           </div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                            {exp.paymentMethod} {exp.notes ? `• ${exp.notes}` : ''}
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <span>{exp.paymentMethod} {exp.notes ? `• ${exp.notes}` : ''}</span>
+                            {exp.userName && (
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: '9999px', background: 'var(--surface-container-high)', color: 'var(--primary)', border: '1px solid var(--outline-variant)' }}>
+                                👤 {exp.userName}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
