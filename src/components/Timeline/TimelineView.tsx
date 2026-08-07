@@ -200,22 +200,31 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
         {groupedExpenses.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 16px', background: 'var(--surface-container-lowest)', borderRadius: '1rem' }}>
+            <div style={{ fontSize: 44, marginBottom: 12 }}>
+              {(filter.authorFilter || 'all') === 'partner' ? '💑' : '📝'}
+            </div>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--on-surface)', marginBottom: 8 }}>No transactions found</h3>
-            <p style={{ fontSize: 14, color: 'var(--on-surface-variant)', marginBottom: 16 }}>We couldn't find any transactions matching your search criteria.</p>
-            <button
-              onClick={onOpenAddModal}
-              style={{
-                padding: '12px 24px',
-                background: 'var(--primary)',
-                color: 'var(--on-primary)',
-                borderRadius: '9999px',
-                fontWeight: 700,
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              + Add Transaction
-            </button>
+            <p style={{ fontSize: 14, color: 'var(--on-surface-variant)', marginBottom: 16 }}>
+              {(filter.authorFilter || 'all') === 'partner'
+                ? "Your partner hasn't added any expenses yet. They'll show up here automatically!"
+                : "We couldn't find any transactions matching your search criteria."}
+            </p>
+            {(filter.authorFilter || 'all') !== 'partner' && (
+              <button
+                onClick={onOpenAddModal}
+                style={{
+                  padding: '12px 24px',
+                  background: 'var(--primary)',
+                  color: 'var(--on-primary)',
+                  borderRadius: '9999px',
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                + Add Transaction
+              </button>
+            )}
           </div>
         ) : (
           groupedExpenses.map(group => (
