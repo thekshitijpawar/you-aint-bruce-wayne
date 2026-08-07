@@ -57,11 +57,11 @@
   --nav-height: 64px;
 }
 
-/* HIGH-CONTRAST DARK MODE COLOR PALETTE WITH VISIBLE BORDERS */
+/* PURE BLACK OLED DARK MODE COLOR PALETTE */
 html.dark {
   --primary: #6366f1;
   --on-primary: #ffffff;
-  --primary-container: #1e293b;
+  --primary-container: #18181b;
   --on-primary-container: #c7d2fe;
 
   --secondary: #34d399; /* Bright Mint Emerald */
@@ -77,23 +77,23 @@ html.dark {
   --error-container: #451a24;
   --on-error-container: #fda4af;
 
-  --bg-app: #0b0f19;
-  --background: #0b0f19;
+  --bg-app: #000000;
+  --background: #000000;
   --on-background: #f8fafc;
 
-  --surface: #0b0f19;
+  --surface: #000000;
   --on-surface: #f8fafc;
-  --surface-variant: #161c2e;
-  --on-surface-variant: #94a3b8;
+  --surface-variant: #18181b;
+  --on-surface-variant: #a1a1aa;
 
-  --surface-container-lowest: #141927;
-  --surface-container-low: #181e30;
-  --surface-container: #1a2035;
-  --surface-container-high: #232a42;
-  --surface-container-highest: #2e3756;
+  --surface-container-lowest: #09090b;
+  --surface-container-low: #121215;
+  --surface-container: #18181b;
+  --surface-container-high: #27272a;
+  --surface-container-highest: #3f3f46;
 
-  --outline: #64748b;
-  --outline-variant: rgba(255, 255, 255, 0.16); /* Crisp, clearly visible subtle borders */
+  --outline: #52525b;
+  --outline-variant: rgba(255, 255, 255, 0.12);
 }
 
 * {

@@ -86,8 +86,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             borderRadius: '1.5rem',
             padding: '28px 24px 24px 24px',
             overflow: 'hidden',
-            background: 'linear-gradient(135deg, #3522cd 0%, #5b46f5 45%, #7c6fff 100%)',
-            boxShadow: '0 20px 40px rgba(53, 34, 205, 0.45)',
+            background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
             minHeight: 200,
           }}
         >
