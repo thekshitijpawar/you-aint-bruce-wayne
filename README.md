@@ -16,3 +16,15 @@ Unless you have Wayne Enterprises backing your bank account, staying on top of d
 - 🌐 **Total Currency & Location Freedom**: Personalize your tracker with any global currency symbol (`₹`, `$`, `€`, `£`, `AED`, `SAR`, `KSh`, `R$`, `zł`, `₺`, etc.) and set your home city.
 - 🔒 **100% Private & Offline-First**: Your financial data stays entirely on your device. Works seamlessly offline without requiring any cloud account login or mandatory internet connection. Protect your data with an optional 4-digit security PIN lock and export your records anytime into PDF, Excel, CSV, or JSON backups.
 - 📷 **Custom Profile & Avatars**: Personalize your profile with custom photo uploads, image URLs, or select from curated preset avatars.
+
+---
+
+## 🔒 Security & Environment Configuration
+
+All environment variables and external endpoints are configured via `.env` files using standard public-safe `VITE_` prefixes:
+
+- Copy `.env.example` to `.env` or `.env.local` for local development.
+- `.env` files are ignored by git to prevent secret leaks.
+
+> [!WARNING]
+> **Git History Security Notice**: If any secret key, token, or password was previously hardcoded or committed to git history during early development, rotate those credentials immediately in your provider dashboard.

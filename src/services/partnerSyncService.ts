@@ -1,6 +1,6 @@
 import type { Expense } from '../types';
 
-const SYNC_RELAY_BASE = 'https://brucewayne-sync-default-rtdb.firebaseio.com/rooms';
+const SYNC_RELAY_BASE = import.meta.env.VITE_PARTNER_SYNC_URL || 'https://brucewayne-sync-default-rtdb.firebaseio.com/rooms';
 
 export const generatePartnerCode = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -27,7 +27,7 @@ export const pushExpenseToPartner = async (partnerCode: string, expense: Expense
       body: JSON.stringify(expense),
     });
   } catch (error) {
-    console.warn('Partner sync push failed:', error);
+    // Silent error handling - do not print sensitive payload data
   }
 };
 
@@ -42,7 +42,7 @@ export const deleteExpenseFromPartner = async (partnerCode: string, expenseCreat
   try {
     await fetch(url, { method: 'DELETE' });
   } catch (error) {
-    console.warn('Partner sync delete failed:', error);
+    // Silent error handling
   }
 };
 
@@ -62,7 +62,6 @@ export const fetchRoomExpenses = async (partnerCode: string): Promise<Expense[]>
 
     return Object.values(data) as Expense[];
   } catch (error) {
-    console.warn('Partner sync fetch failed:', error);
     return [];
   }
 };
