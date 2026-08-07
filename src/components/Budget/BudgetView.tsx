@@ -155,14 +155,14 @@ export const BudgetView: React.FC = () => {
                       width: 42,
                       height: 42,
                       borderRadius: '50%',
-                      background: iconStyle.bg,
-                      color: iconStyle.color,
+                      background: cat.color ? `${cat.color}25` : iconStyle.bg,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      flexShrink: 0,
                     }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 22, color: cat.color || iconStyle.color, fontVariationSettings: "'FILL' 1" }}>
                       {iconSymbol}
                     </span>
                   </div>

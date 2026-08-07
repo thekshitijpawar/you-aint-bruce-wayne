@@ -36,8 +36,8 @@ export const getCategoryMaterialIcon = (nameName = '', iconName = '') => {
   if (q.includes('shop') || q.includes('store') || q.includes('target') || q.includes('bag')) {
     return 'shopping_bag';
   }
-  if (q.includes('entertain') || q.includes('movie') || q.includes('netflix') || q.includes('film')) {
-    return 'movie';
+  if (q.includes('entertain') || q.includes('movie') || q.includes('netflix') || q.includes('film') || q.includes('subscript') || q.includes('tv')) {
+    return 'subscriptions';
   }
   if (q.includes('bill') || q.includes('utility') || q.includes('electric') || q.includes('zap')) {
     return 'electric_bolt';
@@ -64,32 +64,47 @@ export const getCategoryMaterialIcon = (nameName = '', iconName = '') => {
   return 'category';
 };
 
-/* Subtle, muted icon styles matching user's exact dark mode screenshot */
+/* High-contrast, vibrant icon styles matching design theme */
 export const getCategoryIconStyle = (categoryName = '') => {
   const q = categoryName.toLowerCase();
 
-  if (q.includes('rent') || q.includes('house') || q.includes('home') || q.includes('transport') || q.includes('car')) {
-    return {
-      bg: 'rgba(244, 63, 94, 0.12)', // Subtle Rose tint
-      color: '#f43f5e',
-    };
+  if (q.includes('rent') || q.includes('house') || q.includes('home')) {
+    return { bg: 'rgba(20, 184, 166, 0.2)', color: '#14B8A6' };
   }
-  if (q.includes('invest') || q.includes('grocer') || q.includes('income') || q.includes('salary')) {
-    return {
-      bg: 'rgba(16, 185, 129, 0.12)', // Subtle Emerald tint
-      color: '#10b981',
-    };
+  if (q.includes('invest') || q.includes('stock')) {
+    return { bg: 'rgba(5, 150, 105, 0.2)', color: '#10B981' };
   }
-  if (q.includes('emi') || q.includes('food') || q.includes('dining') || q.includes('shopping') || q.includes('wallet')) {
-    return {
-      bg: 'rgba(99, 102, 241, 0.12)', // Subtle Indigo tint
-      color: '#6366f1',
-    };
+  if (q.includes('grocer') || q.includes('supermarket')) {
+    return { bg: 'rgba(16, 185, 129, 0.2)', color: '#10B981' };
+  }
+  if (q.includes('transport') || q.includes('car') || q.includes('uber') || q.includes('taxi')) {
+    return { bg: 'rgba(59, 130, 246, 0.2)', color: '#3B82F6' };
+  }
+  if (q.includes('fuel') || q.includes('gas') || q.includes('petrol')) {
+    return { bg: 'rgba(239, 68, 68, 0.2)', color: '#EF4444' };
+  }
+  if (q.includes('shop') || q.includes('store') || q.includes('bag')) {
+    return { bg: 'rgba(236, 72, 153, 0.2)', color: '#EC4899' };
+  }
+  if (q.includes('entertain') || q.includes('movie') || q.includes('film') || q.includes('subscript') || q.includes('tv')) {
+    return { bg: 'rgba(139, 92, 246, 0.25)', color: '#C084FC' };
+  }
+  if (q.includes('bill') || q.includes('utility') || q.includes('electric')) {
+    return { bg: 'rgba(99, 102, 241, 0.2)', color: '#818CF8' };
+  }
+  if (q.includes('health') || q.includes('medical') || q.includes('doctor')) {
+    return { bg: 'rgba(244, 63, 94, 0.2)', color: '#F43F5E' };
+  }
+  if (q.includes('travel') || q.includes('flight') || q.includes('plane')) {
+    return { bg: 'rgba(14, 165, 233, 0.2)', color: '#38BDF8' };
+  }
+  if (q.includes('food') || q.includes('dining') || q.includes('restaurant')) {
+    return { bg: 'rgba(249, 115, 22, 0.2)', color: '#F97316' };
   }
 
   return {
-    bg: 'var(--surface-container-high)',
-    color: 'var(--on-surface-variant)',
+    bg: 'rgba(168, 85, 247, 0.2)',
+    color: '#C084FC',
   };
 };
 
@@ -129,10 +144,13 @@ export const CategoryIcon: React.FC<CategoryMaterialIconProps> = ({
   color,
 }) => {
   const materialIcon = getCategoryMaterialIcon(categoryName || name, iconName || name);
+  const defaultStyle = getCategoryIconStyle(categoryName || name);
+  const iconColor = color || defaultStyle.color;
+
   return (
     <span
       className={`material-symbols-outlined ${className}`}
-      style={{ fontSize: size, color, fontVariationSettings: "'FILL' 1" }}
+      style={{ fontSize: size, color: iconColor, fontVariationSettings: "'FILL' 1" }}
     >
       {materialIcon}
     </span>
