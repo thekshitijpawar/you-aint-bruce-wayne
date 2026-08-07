@@ -1,221 +1,356 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useExpenses } from '../../context/ExpenseContext';
 import { formatCurrency } from '../../utils/formatters';
+import { getCategoryMaterialIcon, getCategoryIconStyle } from '../UI/CategoryIcon';
+import type { Category } from '../../types';
 
 export const BudgetView: React.FC = () => {
-  const { budget, updateBudget, filteredExpenses, settings } = useExpenses();
+  const { budget, updateBudget, categories, updateCategory, filteredExpenses, settings } = useExpenses();
 
-  const totalMonthlyLimit = budget?.monthlyBudget || 3200;
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [limitInput, setLimitInput] = useState<string>('0');
+  const [isTotalBudgetModalOpen, setIsTotalBudgetModalOpen] = useState(false);
+  const [totalBudgetInput, setTotalBudgetInput] = useState<string>('0');
 
   const currentMonthPrefix = new Date().toISOString().slice(0, 7);
+
+  // Spent per category for current month
+  const categorySpentMap = useMemo(() => {
+    const map = new Map<string, number>();
+    filteredExpenses
+      .filter(e => e.date.startsWith(currentMonthPrefix))
+      .forEach(e => {
+        const curr = map.get(e.categoryId) || 0;
+        map.set(e.categoryId, curr + e.amount);
+      });
+    return map;
+  }, [filteredExpenses, currentMonthPrefix]);
+
   const totalSpent = useMemo(() => {
     return filteredExpenses
       .filter(e => e.date.startsWith(currentMonthPrefix))
       .reduce((sum, e) => sum + e.amount, 0);
   }, [filteredExpenses, currentMonthPrefix]);
 
-  const remaining = Math.max(0, totalMonthlyLimit - totalSpent);
-  const percentage = Math.min(100, Math.round((totalSpent / totalMonthlyLimit) * 100));
+  const totalMonthlyLimit = budget?.monthlyBudget || 0;
+  const remainingTotal = Math.max(0, totalMonthlyLimit - totalSpent);
+  const totalPercentage = totalMonthlyLimit > 0 ? Math.min(100, Math.round((totalSpent / totalMonthlyLimit) * 100)) : 0;
+
+  const openCategoryEdit = (cat: Category) => {
+    setEditingCategory(cat);
+    setLimitInput((cat.budget ?? 0).toString());
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveCategoryLimit = async () => {
+    if (!editingCategory) return;
+    const val = parseFloat(limitInput);
+    const newBudget = isNaN(val) || val < 0 ? 0 : val;
+    await updateCategory(editingCategory.id, { budget: newBudget });
+    setIsEditModalOpen(false);
+    setEditingCategory(null);
+  };
+
+  const openTotalBudgetEdit = () => {
+    setTotalBudgetInput((budget?.monthlyBudget || 0).toString());
+    setIsTotalBudgetModalOpen(true);
+  };
+
+  const handleSaveTotalBudget = async () => {
+    const val = parseFloat(totalBudgetInput);
+    const newTotal = isNaN(val) || val < 0 ? 0 : val;
+    await updateBudget({ monthlyBudget: newTotal });
+    setIsTotalBudgetModalOpen(false);
+  };
 
   return (
     <div style={{ padding: '16px 16px 100px 16px', display: 'flex', flexDirection: 'column', gap: 24 }}>
       
       {/* Header / Summary Section */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--on-surface)' }}>Your Budgets</h1>
-        <p style={{ fontSize: 14, color: 'var(--on-surface-variant)' }}>Keep track of your spending limits for this month.</p>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--on-surface)' }}>Your Budgets</h1>
+        <p style={{ fontSize: 14, color: 'var(--on-surface-variant)' }}>Track spending limits per category for this month.</p>
       </div>
 
       {/* Budget Summary Widget */}
-      <div style={{ background: 'var(--surface-container)', borderRadius: '0.75rem', padding: '24px', display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div style={{ background: 'var(--surface-container)', borderRadius: '1rem', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               TOTAL MONTHLY BUDGET
             </span>
-            <span style={{ fontSize: 32, fontWeight: 700, color: 'var(--on-surface)' }}>
+            <span style={{ fontSize: 28, fontWeight: 800, color: 'var(--on-surface)' }}>
               {formatCurrency(totalMonthlyLimit, settings.currency)}
             </span>
           </div>
 
           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               REMAINING
             </span>
-            <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--secondary)' }}>
-              {formatCurrency(remaining, settings.currency)}
+            <span style={{ fontSize: 20, fontWeight: 800, color: totalMonthlyLimit > 0 && totalSpent > totalMonthlyLimit ? 'var(--error)' : 'var(--secondary)' }}>
+              {formatCurrency(remainingTotal, settings.currency)}
             </span>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div style={{ width: '100%', height: 8, borderRadius: '9999px', background: 'var(--outline-variant)', overflow: 'hidden', position: 'relative' }}>
-          <div style={{ height: '100%', width: `${percentage}%`, background: 'var(--primary)', borderRadius: '9999px', transition: 'width 0.8s cubic-bezier(0.2, 0, 0, 1)' }} />
+          <div style={{ height: '100%', width: `${totalPercentage}%`, background: totalPercentage >= 100 ? 'var(--error)' : 'var(--primary)', borderRadius: '9999px', transition: 'width 0.5s ease' }} />
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--on-surface-variant)' }}>
-          <span>{formatCurrency(totalSpent, settings.currency)} spent</span>
-          <span>{percentage}% of total</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'var(--on-surface-variant)' }}>
+          <span>{formatCurrency(totalSpent, settings.currency)} spent this month</span>
+          <button
+            onClick={openTotalBudgetEdit}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+          >
+            ✏️ Set Total Limit
+          </button>
         </div>
       </div>
 
-      {/* Action Bar */}
+      {/* Categories Bar & Edit Limits Action */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--on-surface)' }}>Categories</h2>
-        <button
-          onClick={() => {
-            const newLimit = prompt('Enter new Monthly Total Budget Limit:', totalMonthlyLimit.toString());
-            if (newLimit && !isNaN(Number(newLimit))) {
-              updateBudget({ monthlyBudget: Number(newLimit) });
-            }
-          }}
-          className="active-press"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '4px 12px',
-            color: 'var(--primary)',
-            fontSize: 13,
-            fontWeight: 600,
-            borderRadius: '9999px',
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit</span>
-          Edit Limits
-        </button>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--on-surface)' }}>Categories</h2>
+        <span style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>Tap any category to change limit</span>
       </div>
 
-      {/* Budget Cards List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        
-        {/* Card 1: Groceries (Normal) */}
-        <div style={{ background: 'var(--surface-container-lowest)', borderRadius: '0.75rem', padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--secondary-container)', color: 'var(--on-secondary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span className="material-symbols-outlined">shopping_cart</span>
-              </div>
-              <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--on-surface)' }}>Groceries</span>
-            </div>
-            <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--on-surface)' }}>
-              {formatCurrency(450, settings.currency)} / {formatCurrency(600, settings.currency)}
-            </span>
-          </div>
-          <div style={{ width: '100%', height: 8, borderRadius: '9999px', background: 'var(--surface-variant)', overflow: 'hidden', margin: '8px 0', position: 'relative' }}>
-            <div style={{ height: '100%', width: '75%', background: 'var(--secondary)', borderRadius: '9999px' }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--on-surface-variant)' }}>
-            <span>2 weeks left</span>
-            <span style={{ fontWeight: 600 }}>75%</span>
-          </div>
-        </div>
+      {/* Dynamic Category Budget Cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {categories.map(cat => {
+          const spent = categorySpentMap.get(cat.id) || 0;
+          const limit = cat.budget ?? 0; // Default limit is 0!
+          const percent = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0;
+          const isOver = limit > 0 && spent > limit;
+          const isWarning = limit > 0 && percent >= 85 && !isOver;
+          const iconSymbol = getCategoryMaterialIcon(cat.name);
+          const iconStyle = getCategoryIconStyle(cat.name);
 
-        {/* Card 2: Entertainment (Warning) */}
-        <div style={{ background: 'var(--surface-container-lowest)', borderRadius: '0.75rem', padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: 0, top: 0, width: 128, height: 128, background: 'rgba(255, 185, 95, 0.2)', borderBottomLeftRadius: 100, pointerEvents: 'none' }} />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, position: 'relative', zIndex: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--tertiary-fixed)', color: 'var(--on-tertiary-fixed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span className="material-symbols-outlined">movie</span>
-              </div>
-              <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--on-surface)' }}>Entertainment</span>
-            </div>
-            <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--on-surface)' }}>
-              {formatCurrency(280, settings.currency)} / {formatCurrency(300, settings.currency)}
-            </span>
-          </div>
-          <div style={{ width: '100%', height: 8, borderRadius: '9999px', background: 'var(--surface-variant)', overflow: 'hidden', margin: '8px 0', position: 'relative', zIndex: 10 }}>
-            <div style={{ height: '100%', width: '93%', background: 'var(--tertiary)', borderRadius: '9999px' }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, position: 'relative', zIndex: 10 }}>
-            <span style={{ color: 'var(--tertiary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>warning</span> Nearing limit
-            </span>
-            <span style={{ color: 'var(--tertiary)', fontWeight: 600 }}>93%</span>
-          </div>
-        </div>
+          return (
+            <div
+              key={cat.id}
+              onClick={() => openCategoryEdit(cat)}
+              className="active-press"
+              style={{
+                background: isOver
+                  ? 'rgba(239, 68, 68, 0.12)'
+                  : isWarning
+                  ? 'rgba(245, 158, 11, 0.12)'
+                  : 'var(--surface-container-lowest)',
+                borderRadius: '0.85rem',
+                padding: 16,
+                border: isOver ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--outline-variant)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {/* Card Header: Icon + Name & Amount / Limit */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: '50%',
+                      background: iconStyle.bg,
+                      color: iconStyle.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      {iconSymbol}
+                    </span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--on-surface)' }}>{cat.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--on-surface-variant)' }}>Tap to edit limit</div>
+                  </div>
+                </div>
 
-        {/* Card 3: Subscriptions (Safe) */}
-        <div style={{ background: 'var(--surface-container-lowest)', borderRadius: '0.75rem', padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(79, 70, 229, 0.2)', color: 'var(--primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span className="material-symbols-outlined">subscriptions</span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: isOver ? 'var(--error)' : 'var(--on-surface)' }}>
+                    {formatCurrency(spent, settings.currency)} / <span style={{ color: limit === 0 ? 'var(--on-surface-variant)' : 'var(--on-surface)' }}>{formatCurrency(limit, settings.currency)}</span>
+                  </div>
+                </div>
               </div>
-              <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--on-surface)' }}>Subscriptions</span>
-            </div>
-            <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--on-surface)' }}>
-              {formatCurrency(85, settings.currency)} / {formatCurrency(100, settings.currency)}
-            </span>
-          </div>
-          <div style={{ width: '100%', height: 8, borderRadius: '9999px', background: 'var(--surface-variant)', overflow: 'hidden', margin: '8px 0', position: 'relative' }}>
-            <div style={{ height: '100%', width: '85%', background: 'var(--primary)', borderRadius: '9999px' }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--on-surface-variant)' }}>
-            <span>Fixed monthly</span>
-            <span style={{ fontWeight: 600 }}>85%</span>
-          </div>
-        </div>
 
-        {/* Card 4: Dining Out (Over Budget) */}
-        <div style={{ background: 'rgba(255, 218, 214, 0.3)', borderRadius: '0.75rem', padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, position: 'relative', zIndex: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--error-container)', color: 'var(--on-error-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span className="material-symbols-outlined">restaurant</span>
+              {/* Progress Bar */}
+              <div style={{ width: '100%', height: 8, borderRadius: '9999px', background: 'var(--surface-container-high)', overflow: 'hidden', margin: '8px 0' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    width: limit === 0 ? '0%' : `${percent}%`,
+                    background: isOver ? 'var(--error)' : isWarning ? '#F59E0B' : 'var(--secondary)',
+                    borderRadius: '9999px',
+                    transition: 'width 0.4s ease',
+                  }}
+                />
               </div>
-              <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--on-surface)' }}>Dining Out</span>
-            </div>
-            <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--error)' }}>
-              {formatCurrency(420, settings.currency)} / {formatCurrency(400, settings.currency)}
-            </span>
-          </div>
-          <div style={{ width: '100%', height: 8, borderRadius: '9999px', background: 'rgba(186, 26, 26, 0.2)', overflow: 'hidden', margin: '8px 0', position: 'relative', zIndex: 10 }}>
-            <div style={{ height: '100%', width: '100%', background: 'var(--error)', borderRadius: '9999px' }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, position: 'relative', zIndex: 10 }}>
-            <span style={{ color: 'var(--error)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>error</span> Over budget by {formatCurrency(20, settings.currency)}
-            </span>
-            <span style={{ color: 'var(--error)', fontWeight: 600 }}>105%</span>
-          </div>
-        </div>
 
+              {/* Footer Status Message */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, alignItems: 'center' }}>
+                {limit === 0 ? (
+                  <span style={{ color: 'var(--on-surface-variant)', fontWeight: 600 }}>Default Limit: {formatCurrency(0, settings.currency)} (Tap to set)</span>
+                ) : isOver ? (
+                  <span style={{ color: 'var(--error)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>error</span> Over budget by {formatCurrency(spent - limit, settings.currency)}
+                  </span>
+                ) : isWarning ? (
+                  <span style={{ color: '#F59E0B', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>warning</span> Nearing limit
+                  </span>
+                ) : (
+                  <span style={{ color: 'var(--on-surface-variant)' }}>{100 - percent}% remaining</span>
+                )}
+
+                <span style={{ fontWeight: 700, color: isOver ? 'var(--error)' : isWarning ? '#F59E0B' : 'var(--on-surface)' }}>
+                  {limit === 0 ? '0%' : `${percent}%`}
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Create New Budget Category Button */}
-      <button
-        onClick={() => {
-          const catName = prompt('Enter new budget category name:');
-          if (catName) {
-            alert(`Category "${catName}" added!`);
-          }
-        }}
-        className="active-press"
-        style={{
-          marginTop: 16,
-          width: '100%',
-          padding: '16px',
-          borderRadius: '0.75rem',
-          border: '2px dashed var(--outline-variant)',
-          color: 'var(--on-surface-variant)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          fontSize: 14,
-          fontWeight: 600,
-          background: 'transparent',
-          cursor: 'pointer',
-        }}
-      >
-        <span className="material-symbols-outlined">add_circle</span>
-        Create New Budget Category
-      </button>
+      {/* Modal: Edit Specific Category Limit */}
+      {isEditModalOpen && editingCategory && (
+        <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ padding: 24, maxWidth: 360 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--on-surface)', marginBottom: 8 }}>
+              Set Limit for {editingCategory.name}
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--on-surface-variant)', marginBottom: 16 }}>
+              Enter monthly budget limit in {settings.currency} (Set to 0 for no limit).
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--on-surface-variant)' }}>
+                MONTHLY LIMIT ({settings.currency})
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="100"
+                value={limitInput}
+                onChange={e => setLimitInput(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '0.75rem',
+                  border: '1px solid var(--outline-variant)',
+                  background: 'var(--surface-container-high)',
+                  color: 'var(--on-surface)',
+                  fontSize: 18,
+                  fontWeight: 700,
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '9999px',
+                  border: '1px solid var(--outline-variant)',
+                  background: 'transparent',
+                  color: 'var(--on-surface)',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveCategoryLimit}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '9999px',
+                  border: 'none',
+                  background: 'var(--primary)',
+                  color: 'var(--on-primary)',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Save Limit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Total Monthly Budget */}
+      {isTotalBudgetModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsTotalBudgetModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ padding: 24, maxWidth: 360 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--on-surface)', marginBottom: 8 }}>
+              Total Monthly Budget Limit
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--on-surface-variant)', marginBottom: 16 }}>
+              Set overall spending limit across all categories in {settings.currency}.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+              <input
+                type="number"
+                min="0"
+                step="500"
+                value={totalBudgetInput}
+                onChange={e => setTotalBudgetInput(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '0.75rem',
+                  border: '1px solid var(--outline-variant)',
+                  background: 'var(--surface-container-high)',
+                  color: 'var(--on-surface)',
+                  fontSize: 18,
+                  fontWeight: 700,
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setIsTotalBudgetModalOpen(false)}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '9999px',
+                  border: '1px solid var(--outline-variant)',
+                  background: 'transparent',
+                  color: 'var(--on-surface)',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveTotalBudget}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '9999px',
+                  border: 'none',
+                  background: 'var(--primary)',
+                  color: 'var(--on-primary)',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Save Budget
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
