@@ -3,12 +3,14 @@ import { Lock, Delete } from 'lucide-react';
 import { useSecurity } from '../../context/SecurityContext';
 
 export const PinLockModal: React.FC = () => {
-  const { isLocked, verifyPin, pinError } = useSecurity();
+  const { isLocked, verifyPin, pinError, lockoutSeconds } = useSecurity();
   const [enteredPin, setEnteredPin] = useState('');
 
   if (!isLocked) return null;
 
   const handleDigit = (digit: string) => {
+    if (lockoutSeconds > 0) return;
+
     if (enteredPin.length < 4) {
       const next = enteredPin + digit;
       setEnteredPin(next);
@@ -25,6 +27,7 @@ export const PinLockModal: React.FC = () => {
   };
 
   const handleDelete = () => {
+    if (lockoutSeconds > 0) return;
     setEnteredPin(prev => prev.slice(0, -1));
   };
 
@@ -51,8 +54,8 @@ export const PinLockModal: React.FC = () => {
             width: 64,
             height: 64,
             borderRadius: '50%',
-            background: 'rgba(16, 185, 129, 0.15)',
-            color: '#10B981',
+            background: lockoutSeconds > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+            color: lockoutSeconds > 0 ? '#EF4444' : '#10B981',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -65,7 +68,9 @@ export const PinLockModal: React.FC = () => {
           Expense Tracker Locked
         </h2>
         <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>
-          Enter your 4-digit security PIN to access your financial data
+          {lockoutSeconds > 0
+            ? `Security lockout active. Retry in ${lockoutSeconds}s.`
+            : 'Enter your 4-digit security PIN to access your financial data'}
         </p>
       </div>
 
@@ -80,9 +85,9 @@ export const PinLockModal: React.FC = () => {
                 width: 18,
                 height: 18,
                 borderRadius: '50%',
-                background: isFilled ? '#10B981' : 'transparent',
+                background: isFilled ? (lockoutSeconds > 0 ? '#EF4444' : '#10B981') : 'transparent',
                 border: '2px solid #374151',
-                boxShadow: isFilled ? '0 0 12px rgba(16, 185, 129, 0.5)' : 'none',
+                boxShadow: isFilled ? `0 0 12px ${lockoutSeconds > 0 ? 'rgba(239, 68, 68, 0.5)' : 'rgba(16, 185, 129, 0.5)'}` : 'none',
                 transition: 'all 0.15s ease',
               }}
             />
@@ -91,7 +96,7 @@ export const PinLockModal: React.FC = () => {
       </div>
 
       {pinError && (
-        <div style={{ color: '#FB7185', fontSize: 13, fontWeight: 600, marginBottom: 20 }}>
+        <div style={{ color: '#FB7185', fontSize: 13, fontWeight: 600, marginBottom: 20, textAlign: 'center' }}>
           {pinError}
         </div>
       )}
@@ -104,6 +109,8 @@ export const PinLockModal: React.FC = () => {
           gap: 16,
           width: '100%',
           maxWidth: 280,
+          opacity: lockoutSeconds > 0 ? 0.4 : 1,
+          pointerEvents: lockoutSeconds > 0 ? 'none' : 'auto',
         }}
       >
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'].map((k, i) => {
@@ -113,6 +120,7 @@ export const PinLockModal: React.FC = () => {
               <button
                 key="pin-del"
                 onClick={handleDelete}
+                disabled={lockoutSeconds > 0}
                 style={{
                   height: 60,
                   borderRadius: '50%',
@@ -122,7 +130,7 @@ export const PinLockModal: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: 'pointer',
+                  cursor: lockoutSeconds > 0 ? 'not-allowed' : 'pointer',
                 }}
               >
                 <Delete size={22} />
@@ -134,6 +142,7 @@ export const PinLockModal: React.FC = () => {
             <button
               key={`pin-btn-${k}-${i}`}
               onClick={() => handleDigit(k)}
+              disabled={lockoutSeconds > 0}
               style={{
                 height: 60,
                 borderRadius: '50%',
@@ -142,7 +151,7 @@ export const PinLockModal: React.FC = () => {
                 color: '#F9FAFB',
                 fontSize: 22,
                 fontWeight: 700,
-                cursor: 'pointer',
+                cursor: lockoutSeconds > 0 ? 'not-allowed' : 'pointer',
                 transition: 'transform 0.1s ease',
               }}
             >

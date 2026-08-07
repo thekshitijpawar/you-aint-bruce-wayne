@@ -4,6 +4,8 @@ import { useExpenses } from './ExpenseContext';
 interface SecurityContextType {
   isLocked: boolean;
   pinError: string;
+  failedAttempts: number;
+  lockoutSeconds: number;
   verifyPin: (pin: string) => boolean;
   unlockApp: () => void;
   lockApp: () => void;
@@ -15,6 +17,8 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { settings } = useExpenses();
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [pinError, setPinError] = useState('');
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
 
   // Lock app when minimized / backgrounded
   useEffect(() => {
@@ -30,15 +34,49 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, [settings.pinEnabled]);
 
+  // Handle countdown timer for rate limiting lockout
+  useEffect(() => {
+    let interval: any = null;
+    if (lockoutSeconds > 0) {
+      interval = setInterval(() => {
+        setLockoutSeconds(prev => {
+          if (prev <= 1) {
+            setFailedAttempts(0);
+            setPinError('');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [lockoutSeconds]);
+
   const isLocked = Boolean(settings.pinEnabled && settings.pinCode && settings.pinCode.length === 4 && !isUnlocked);
 
   const verifyPin = (enteredPin: string): boolean => {
+    if (lockoutSeconds > 0) {
+      setPinError(`Too many failed attempts. Please wait ${lockoutSeconds}s.`);
+      return false;
+    }
+
     if (enteredPin === settings.pinCode) {
       setIsUnlocked(true);
       setPinError('');
+      setFailedAttempts(0);
       return true;
     } else {
-      setPinError('Incorrect PIN. Please try again.');
+      const nextAttempts = failedAttempts + 1;
+      setFailedAttempts(nextAttempts);
+
+      if (nextAttempts >= 5) {
+        setLockoutSeconds(30);
+        setPinError('Too many failed attempts. Locked out for 30s.');
+      } else {
+        setPinError(`Incorrect PIN. ${5 - nextAttempts} attempts remaining.`);
+      }
       return false;
     }
   };
@@ -52,7 +90,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <SecurityContext.Provider value={{ isLocked, pinError, verifyPin, unlockApp, lockApp }}>
+    <SecurityContext.Provider value={{ isLocked, pinError, failedAttempts, lockoutSeconds, verifyPin, unlockApp, lockApp }}>
       {children}
     </SecurityContext.Provider>
   );
