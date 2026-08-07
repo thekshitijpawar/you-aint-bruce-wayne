@@ -15,7 +15,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   onOpenAddModal,
   onOpenFilterModal,
 }) => {
-  const { filteredExpenses, categoriesMap, deleteExpense, settings } = useExpenses();
+  const { filteredExpenses, categoriesMap, deleteExpense, settings, filter, setFilter } = useExpenses();
   const [activeChip, setActiveChip] = useState<string>('All');
   const [searchInput, setSearchInput] = useState<string>('');
 
@@ -126,6 +126,36 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             <span className="material-symbols-outlined">tune</span>
           </button>
         </div>
+
+        {/* Partner Author Filter Segment */}
+        {settings.partnerCode && (
+          <div style={{ display: 'flex', background: 'var(--surface-container-high)', borderRadius: '9999px', padding: 4, marginTop: 10, border: '1px solid var(--outline-variant)' }}>
+            {[
+              { id: 'all', label: '👥 Combined' },
+              { id: 'mine', label: '👤 Mine' },
+              { id: 'partner', label: '💑 Partner' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter({ authorFilter: tab.id as any })}
+                style={{
+                  flex: 1,
+                  padding: '6px 12px',
+                  background: (filter.authorFilter || 'all') === tab.id ? 'var(--primary)' : 'transparent',
+                  color: (filter.authorFilter || 'all') === tab.id ? 'var(--on-primary)' : 'var(--on-surface-variant)',
+                  borderRadius: '9999px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Filter Chips */}
         <div
@@ -238,8 +268,13 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                           <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--on-surface)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {catName}
                           </p>
-                          <p style={{ fontSize: 12, color: 'var(--on-surface-variant)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {catName} • {formatTimeDisplay(exp.time)} {exp.city ? `• ${exp.city}` : ''}
+                          <p style={{ fontSize: 12, color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
+                            <span>{formatTimeDisplay(exp.time)} {exp.city ? `• ${exp.city}` : ''}</span>
+                            {exp.userName && (
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: '9999px', background: 'var(--surface-container-high)', color: 'var(--primary)', border: '1px solid var(--outline-variant)' }}>
+                                👤 {exp.userName}
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>
