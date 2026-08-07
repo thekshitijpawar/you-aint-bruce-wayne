@@ -292,11 +292,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--on-surface)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {catName}
                       </div>
+                      {exp.notes && (
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          📝 {exp.notes}
+                        </div>
+                      )}
                       <div style={{ fontSize: 12, color: 'var(--on-surface-variant)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span>{formatDateDisplay(exp.date)}, {formatTimeDisplay(exp.time)}</span>
+                        <span>{formatDateDisplay(exp.date)}, {formatTimeDisplay(exp.time)} {exp.city ? `• ${exp.city}` : ''}</span>
                         {exp.userName && !isMine && (
                           <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: '9999px', background: 'rgba(129,140,248,0.12)', color: '#818CF8' }}>
-                            {exp.userName}
+                            👤 {exp.userName}
                           </span>
                         )}
                       </div>

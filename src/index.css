@@ -57,7 +57,7 @@
   --nav-height: 64px;
 }
 
-/* PURE BLACK OLED DARK MODE COLOR PALETTE */
+/* PURE BLACK OLED DARK MODE COLOR PALETTE WITH CRISP VISIBLE BORDERS */
 html.dark {
   --primary: #6366f1;
   --on-primary: #ffffff;
@@ -86,14 +86,20 @@ html.dark {
   --surface-variant: #18181b;
   --on-surface-variant: #a1a1aa;
 
-  --surface-container-lowest: #09090b;
-  --surface-container-low: #121215;
-  --surface-container: #18181b;
+  --surface-container-lowest: #0d0d0f;
+  --surface-container-low: #141417;
+  --surface-container: #1c1c20;
   --surface-container-high: #27272a;
   --surface-container-highest: #3f3f46;
 
-  --outline: #52525b;
-  --outline-variant: rgba(255, 255, 255, 0.12);
+  --outline: #71717a;
+  --outline-variant: rgba(255, 255, 255, 0.22); /* Crisp, highly visible border */
+
+  --bg-card-hover: #1c1c20;
+  --border-color: rgba(255, 255, 255, 0.22);
+  --text-primary: #f8fafc;
+  --text-secondary: #e2e8f0;
+  --text-muted: #a1a1aa;
 }
 
 * {

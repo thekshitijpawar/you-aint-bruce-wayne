@@ -274,9 +274,14 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                         </div>
 
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--on-surface)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--on-surface)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {catName}
                           </p>
+                          {exp.notes && (
+                            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              📝 {exp.notes}
+                            </p>
+                          )}
                           <p style={{ fontSize: 12, color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
                             <span>{formatTimeDisplay(exp.time)} {exp.city ? `• ${exp.city}` : ''}</span>
                             {exp.userName && (
