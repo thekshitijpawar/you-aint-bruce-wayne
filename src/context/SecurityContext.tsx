@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useExpenses } from './ExpenseContext';
 
 interface SecurityContextType {
@@ -16,7 +16,21 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [pinError, setPinError] = useState('');
 
-  const isLocked = settings.pinEnabled && settings.pinCode.length === 4 && !isUnlocked;
+  // Lock app when minimized / backgrounded
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && settings.pinEnabled) {
+        setIsUnlocked(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [settings.pinEnabled]);
+
+  const isLocked = Boolean(settings.pinEnabled && settings.pinCode && settings.pinCode.length === 4 && !isUnlocked);
 
   const verifyPin = (enteredPin: string): boolean => {
     if (enteredPin === settings.pinCode) {

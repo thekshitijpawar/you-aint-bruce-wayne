@@ -12,6 +12,7 @@ import { SettingsView } from '../Settings/SettingsView';
 import { ExpenseFormModal } from '../ExpenseForm/ExpenseFormModal';
 import { SearchFilterModal } from '../SearchFilter/SearchFilterModal';
 import { OnboardingModal } from '../Onboarding/OnboardingModal';
+import { PinLockModal } from '../BackupSecurity/PinLockModal';
 
 export const NavigationShell: React.FC = () => {
   const { settings, lastDeleted, undoDelete } = useExpenses();
@@ -74,6 +75,7 @@ export const NavigationShell: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <PinLockModal />
       {!settings.hasCompletedOnboarding && <OnboardingModal />}
       
       {/* Stitch Glassmorphic Header with Exact Logo Image */}
