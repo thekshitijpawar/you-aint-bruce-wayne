@@ -12,7 +12,7 @@ export const generatePartnerCode = (): string => {
 };
 
 /**
- * Pushes a local expense to the shared partner room endpoint
+ * Pushes a sanitized local expense payload to the shared partner room endpoint
  */
 export const pushExpenseToPartner = async (partnerCode: string, expense: Expense): Promise<void> => {
   if (!partnerCode) return;
@@ -20,11 +20,25 @@ export const pushExpenseToPartner = async (partnerCode: string, expense: Expense
   const expId = expense.createdAt ? String(expense.createdAt) : String(Date.now());
   const url = `${SYNC_RELAY_BASE}/${cleanCode}/expenses/${expId}.json`;
 
+  // Sanitize payload: include only public transaction fields needed for partner sync
+  const sanitizedPayload: Partial<Expense> = {
+    amount: expense.amount,
+    categoryId: expense.categoryId,
+    date: expense.date,
+    time: expense.time,
+    paymentMethod: expense.paymentMethod,
+    city: expense.city || '',
+    notes: expense.notes || '',
+    createdAt: expense.createdAt,
+    userName: expense.userName || 'User',
+    userPhoto: expense.userPhoto || '',
+  };
+
   try {
     await fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(expense),
+      body: JSON.stringify(sanitizedPayload),
     });
   } catch (error) {
     // Silent error handling - do not print sensitive payload data
