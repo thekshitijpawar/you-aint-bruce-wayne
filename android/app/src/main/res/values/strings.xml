@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Bruce Wayne Tracker</string>
-    <string name="title_activity_main">Bruce Wayne Tracker</string>
+    <string name="app_name">You Ain\'t Bruce Wayne</string>
+    <string name="title_activity_main">You Ain\'t Bruce Wayne</string>
     <string name="package_name">com.brucewayne.moneytracker</string>
     <string name="custom_url_scheme">com.brucewayne.moneytracker</string>
 </resources>
