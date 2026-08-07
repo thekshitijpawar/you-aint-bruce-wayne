@@ -63,6 +63,7 @@ export interface AppSettings {
   theme?: 'light' | 'dark';
   profilePhoto?: string;
   userName?: string;
+  hasCompletedOnboarding?: boolean;
   currency: CurrencySymbol;
   city: string;                      // User's default home city
   firstDayOfWeek: 'Monday' | 'Sunday';

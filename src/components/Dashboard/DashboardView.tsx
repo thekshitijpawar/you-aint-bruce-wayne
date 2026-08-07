@@ -215,49 +215,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <span onClick={() => onNavigateTab('analytics')} style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>See all</span>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {insights.map(item => {
-            const catName = item.category?.name || item.id;
-            const iconSymbol = getCategoryMaterialIcon(catName);
-            const style = getCategoryIconStyle(catName);
+        {insights.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--on-surface-variant)', fontSize: 13 }}>
+            No spending recorded yet. Tap the + button to add your first transaction!
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {insights.map(item => {
+              const catName = item.category?.name || item.id;
+              const iconSymbol = getCategoryMaterialIcon(catName);
+              const style = getCategoryIconStyle(catName);
 
-            return (
-              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    background: style.bg,
-                    color: style.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    {iconSymbol}
-                  </span>
-                </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--on-surface)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {catName}
-                    </span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--on-surface-variant)' }}>
-                      {formatCurrency(item.amount, settings.currency)}
+              return (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      background: style.bg,
+                      color: style.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      {iconSymbol}
                     </span>
                   </div>
-                  <div style={{ width: '100%', height: 8, background: 'var(--surface-container-high)', borderRadius: '9999px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${item.percentage}%`, background: style.color, borderRadius: '9999px' }} />
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--on-surface)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {catName}
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--on-surface-variant)' }}>
+                        {formatCurrency(item.amount, settings.currency)}
+                      </span>
+                    </div>
+                    <div style={{ width: '100%', height: 8, background: 'var(--surface-container-high)', borderRadius: '9999px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${item.percentage}%`, background: style.color, borderRadius: '9999px' }} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Recent Transactions Card with Exact Category Logos/Icons */}
@@ -291,7 +297,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {recentTransactions.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--on-surface-variant)' }}>
-            No recent transactions
+            <div style={{ fontSize: 36, marginBottom: 8 }}>📝</div>
+            <div style={{ fontWeight: 600, color: 'var(--on-surface)', fontSize: 15 }}>No transactions logged yet</div>
+            <div style={{ fontSize: 12, marginTop: 4 }}>Tap the + button to add your first transaction</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

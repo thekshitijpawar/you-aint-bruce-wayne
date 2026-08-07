@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type { Expense, Category, Budget, AppSettings } from '../types';
-import { DEFAULT_CATEGORIES, generateSampleExpenses } from '../utils/mockData';
+import { DEFAULT_CATEGORIES } from '../utils/mockData';
 
 export class ExpenseDatabase extends Dexie {
   expenses!: Table<Expense, number>;
@@ -27,29 +27,19 @@ export const seedDatabaseIfEmpty = async (): Promise<void> => {
     await db.categories.bulkAdd(DEFAULT_CATEGORIES);
   }
 
-  const expensesCount = await db.expenses.count();
-  if (expensesCount === 0) {
-    const samples = generateSampleExpenses();
-    await db.expenses.bulkAdd(samples);
-  }
-
-  const budgetCount = await db.budgets.count();
-  if (budgetCount === 0) {
-    await db.budgets.add({
-      monthlyBudget: 50000,
-      weeklyBudget: 12500,
-      updatedAt: Date.now(),
-    });
-  }
+  // NOTE: Zero mock expenses on initialization! User starts at 0 transactions.
 
   const settingsCount = await db.settings.count();
   if (settingsCount === 0) {
     await db.settings.add({
       id: 'default',
-      currency: '₹',
-      city: 'Mumbai',
+      currency: '$',
+      city: 'New York',
+      userName: '',
+      profilePhoto: '',
+      hasCompletedOnboarding: false,
       firstDayOfWeek: 'Monday',
-      defaultPaymentMethod: 'UPI',
+      defaultPaymentMethod: 'Cash',
       defaultCategory: 'food',
       eveningReminder: true,
       reminderTime: '21:00',

@@ -11,6 +11,7 @@ import { CategoriesView } from '../Categories/CategoriesView';
 import { SettingsView } from '../Settings/SettingsView';
 import { ExpenseFormModal } from '../ExpenseForm/ExpenseFormModal';
 import { SearchFilterModal } from '../SearchFilter/SearchFilterModal';
+import { OnboardingModal } from '../Onboarding/OnboardingModal';
 
 export const NavigationShell: React.FC = () => {
   const { settings, lastDeleted, undoDelete } = useExpenses();
@@ -73,6 +74,7 @@ export const NavigationShell: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {!settings.hasCompletedOnboarding && <OnboardingModal />}
       
       {/* Stitch Glassmorphic Header with Exact Logo Image */}
       <header className="glass-header">
