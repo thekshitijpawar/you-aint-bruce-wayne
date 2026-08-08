@@ -3,7 +3,7 @@ import { Moon, Sun, Monitor, Download, Upload, RotateCcw, Bell, MapPin, DollarSi
 import { useExpenses } from '../../context/ExpenseContext';
 import { useTheme, type ThemeMode } from '../../context/ThemeContext';
 import type { PaymentMethod } from '../../types';
-import { sanitizeText, sanitizeUrl } from '../../utils/sanitize';
+import { sanitizeText } from '../../utils/sanitize';
 
 const DEFAULT_AVATAR = "https://lh3.googleusercontent.com/aida-public/AB6AXuBFz6ZwYxKqDE_VcKK4pktAGb8GoX2lRz2rDkDvpzhHi3dZhL6d-N-fmFEa_fzBd4VfJ5USYJ3vEFeil_psZP0LY9MghFVGlqPXP_X9GGiOEVRLKap7BsN6-9tyM76Zi87mTXupIFFKGPtCQZCsHyQ8Xld43X_cpm_FGCO1I8xGztFq9FnUT24NSypW-mPUyW8P8Qw0tpY_sVaervsIqADLbXzKXrzNfXpnbJVH6dg4UGObeYVMUg";
 
