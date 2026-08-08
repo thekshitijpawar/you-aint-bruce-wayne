@@ -111,87 +111,110 @@ export const CategoriesView: React.FC = () => {
             alignItems: 'center',
             gap: 6,
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+            boxShadow: '0 2px 8px rgba(53, 37, 205, 0.25)',
           }}
         >
           <Plus size={16} /> New Category
         </button>
       </div>
 
-      {/* Grid of Categories */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-        {categories.map(cat => {
-          const transactionCount = expenses.filter(e => e.categoryId === cat.id).length;
-          return (
-            <div
-              key={cat.id}
-              className="app-card"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                margin: 0,
-                padding: 16,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 'var(--radius-md)',
-                    background: `${cat.color}25`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: cat.color,
-                  }}
-                >
-                  <CategoryIcon name={cat.icon} size={22} />
-                </div>
-
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button
-                    onClick={() => openEditModal(cat)}
+      {categories.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 16px', background: 'var(--surface-container-lowest)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+          <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.7 }}>🏷️</div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>No categories yet</h3>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.5 }}>Create categories to organize your expenses better.</p>
+          <button
+            onClick={openAddModal}
+            style={{
+              padding: '12px 24px',
+              background: 'var(--primary)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 'var(--radius-full)',
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(53, 37, 205, 0.25)',
+            }}
+          >
+            + Create Category
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+          {categories.map(cat => {
+            const transactionCount = expenses.filter(e => e.categoryId === cat.id).length;
+            return (
+              <div
+                key={cat.id}
+                className="app-card"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  margin: 0,
+                  padding: 16,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div
                     style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer',
-                      padding: 4,
+                      width: 44,
+                      height: 44,
+                      borderRadius: 'var(--radius-md)',
+                      background: `${cat.color}25`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: cat.color,
                     }}
                   >
-                    <Edit2 size={16} />
-                  </button>
-                  {!cat.isDefault && (
+                    <CategoryIcon name={cat.icon} size={22} />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 4 }}>
                     <button
-                      onClick={() => handleDelete(cat.id, cat.name)}
+                      onClick={() => openEditModal(cat)}
                       style={{
                         background: 'none',
                         border: 'none',
-                        color: 'var(--danger)',
+                        color: 'var(--text-muted)',
                         cursor: 'pointer',
                         padding: 4,
                       }}
                     >
-                      <Trash2 size={16} />
+                      <Edit2 size={16} />
                     </button>
-                  )}
+                    {!cat.isDefault && (
+                      <button
+                        onClick={() => handleDelete(cat.id, cat.name)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--danger)',
+                          cursor: 'pointer',
+                          padding: 4,
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {cat.name}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                  {transactionCount} {transactionCount === 1 ? 'transaction' : 'transactions'}
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {cat.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                    {transactionCount} {transactionCount === 1 ? 'transaction' : 'transactions'}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Add / Edit Category Modal */}
       {isModalOpen && (

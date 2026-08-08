@@ -58,7 +58,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div>
           <div style={{ fontSize: 13, color: 'var(--on-surface-variant)', fontWeight: 500 }}>Good day,</div>
           <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--on-surface)', letterSpacing: '-0.02em' }}>
-            Hi, {firstName} 👋
+            {firstName} 👋
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -82,64 +82,64 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div
           style={{
             position: 'relative',
-            borderRadius: '1.5rem',
-            padding: '28px 24px 24px 24px',
+            borderRadius: '1.25rem',
+            padding: '24px 20px 20px 20px',
             overflow: 'hidden',
-            background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
-            minHeight: 200,
+            background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a8a 100%)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+            minHeight: 180,
           }}
         >
           {/* Floating decorative circles */}
-          <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.07)' }} />
-          <div style={{ position: 'absolute', bottom: -20, right: 40, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
-          <div style={{ position: 'absolute', top: 40, right: 100, width: 60, height: 60, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+          <div style={{ position: 'absolute', top: -40, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+          <div style={{ position: 'absolute', bottom: -30, right: 50, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
+          <div style={{ position: 'absolute', top: 50, right: 120, width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.02)' }} />
 
           <div style={{ position: 'relative', zIndex: 2 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
               Current Balance
             </div>
-            <div style={{ fontSize: 40, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: 20 }}>
+            <div style={{ fontSize: 36, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: 16 }}>
               {balanceStr}
             </div>
 
             {/* Card Number Style */}
-            <div style={{ fontSize: 15, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.55)', fontWeight: 500, marginBottom: 20 }}>
+            <div style={{ fontSize: 14, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)', fontWeight: 500, marginBottom: 16 }}>
               •••• •••• •••• 8398
             </div>
 
             {/* Income / Expense Row */}
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 13, color: '#6ee7b7' }}>arrow_downward</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(52,211,153,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 12, color: '#6ee7b7' }}>arrow_downward</span>
                   </div>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Income</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>Income</span>
                 </div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#ffffff' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>
                   +{formatCurrency(summaryMetrics.monthlyIncome, settings.currency)}
                 </div>
               </div>
 
-              <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.2)', margin: '0 16px' }} />
+              <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.15)', margin: '0 14px' }} />
 
               <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 13, color: '#fca5a5' }}>arrow_upward</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(248,113,113,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 12, color: '#fca5a5' }}>arrow_upward</span>
                   </div>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Expenses</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>Expenses</span>
                 </div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#ffffff' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>
                   -{formatCurrency(summaryMetrics.monthTotal, settings.currency)}
                 </div>
               </div>
 
               {/* Mastercard-style logo */}
-              <div style={{ display: 'flex', marginLeft: 12 }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EB001B', opacity: 0.9 }} />
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#F79E1B', opacity: 0.9, marginLeft: -10 }} />
+              <div style={{ display: 'flex', marginLeft: 10 }}>
+                <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#EB001B', opacity: 0.85 }} />
+                <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#F79E1B', opacity: 0.85, marginLeft: -10 }} />
               </div>
             </div>
           </div>
@@ -250,10 +250,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {recentTransactions.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px 16px' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>📝</div>
+            <div style={{ textAlign: 'center', padding: '36px 16px' }}>
+              <div style={{ fontSize: 44, marginBottom: 10, opacity: 0.8 }}>📝</div>
               <div style={{ fontWeight: 700, color: 'var(--on-surface)', fontSize: 15 }}>No transactions yet</div>
-              <div style={{ fontSize: 13, color: 'var(--on-surface-variant)', marginTop: 4 }}>Tap the + button to add your first</div>
+              <div style={{ fontSize: 13, color: 'var(--on-surface-variant)', marginTop: 4, lineHeight: 1.5 }}>Tap the + button to add your first expense. Every rupee counts.</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

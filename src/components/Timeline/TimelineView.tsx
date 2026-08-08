@@ -172,9 +172,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             <div style={{ fontSize: 44, marginBottom: 12 }}>
               📝
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--on-surface)', marginBottom: 8 }}>No transactions found</h3>
-            <p style={{ fontSize: 14, color: 'var(--on-surface-variant)', marginBottom: 16 }}>
-              We couldn't find any transactions matching your search criteria.
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--on-surface)', marginBottom: 6 }}>Nothing here yet</h3>
+            <p style={{ fontSize: 14, color: 'var(--on-surface-variant)', marginBottom: 16, lineHeight: 1.5 }}>
+              Start tracking your expenses to see them show up here.
             </p>
             <button
                 onClick={onOpenAddModal}
