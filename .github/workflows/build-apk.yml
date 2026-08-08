@@ -37,6 +37,9 @@ jobs:
           api-level: 35
           build-tools: 35.0.0
 
+      - name: Accept Android SDK Licenses
+        run: yes | sdkmanager --licenses || true
+
       - name: Sync Capacitor Android
         run: npx cap sync android
 
