@@ -6,7 +6,6 @@ export const formatCurrency = (amount: number, symbol: CurrencySymbol = '₹'): 
     minimumFractionDigits: 0,
   }).format(amount);
 
-  // If symbol is multi-character text code e.g. "AED", "USD", "KSh"
   if (symbol && symbol.length > 2) {
     return `${symbol} ${formatted}`;
   }
@@ -31,7 +30,7 @@ export const getCurrentTimeString = (): string => {
 export const formatDateDisplay = (dateString: string): string => {
   if (!dateString) return '';
   const today = getTodayDateString();
-  
+
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
   const yesterday = yesterdayDate.toISOString().split('T')[0];
@@ -41,7 +40,7 @@ export const formatDateDisplay = (dateString: string): string => {
 
   const [year, month, day] = dateString.split('-').map(Number);
   const dateObj = new Date(year, month - 1, day);
-  
+
   return dateObj.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

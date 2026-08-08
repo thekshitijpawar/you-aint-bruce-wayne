@@ -45,8 +45,6 @@ export const seedDatabaseIfEmpty = async (): Promise<void> => {
       defaultCategory: 'food',
       eveningReminder: true,
       reminderTime: '21:00',
-      pinEnabled: false,
-      pinCode: '',
     });
   }
 };

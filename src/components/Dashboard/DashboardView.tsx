@@ -33,9 +33,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     let list = [...filteredExpenses].sort(
       (a, b) => new Date(`${b.date}T${b.time}`).getTime() - new Date(`${a.date}T${a.time}`).getTime()
     );
-    if (recentTab === 'Out') list = list.filter(e => e.amount > 0);
     return list.slice(0, 6);
-  }, [filteredExpenses, recentTab]);
+  }, [filteredExpenses]);
 
   const insights = useMemo(() => {
     const map: Record<string, number> = {};
@@ -151,10 +150,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div style={{ padding: '24px 20px 8px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-around' }}>
           {[
-            { icon: 'send', label: 'Send', color: '#818CF8', bg: 'rgba(129,140,248,0.12)', action: onOpenAddModal },
-            { icon: 'payments', label: 'Pay', color: '#34D399', bg: 'rgba(52,211,153,0.12)', action: () => onNavigateTab('timeline') },
-            { icon: 'phone_iphone', label: 'Recharge', color: '#F97316', bg: 'rgba(249,115,22,0.12)', action: () => onNavigateTab('budget') },
-            { icon: 'bolt', label: 'Electricity\nBill', color: '#FBBF24', bg: 'rgba(251,191,36,0.12)', action: () => onNavigateTab('analytics') },
+            { icon: 'add_circle', label: 'Add', color: '#818CF8', bg: 'rgba(129,140,248,0.12)', action: onOpenAddModal },
+            { icon: 'receipt_long', label: 'History', color: '#34D399', bg: 'rgba(52,211,153,0.12)', action: () => onNavigateTab('timeline') },
+            { icon: 'account_balance_wallet', label: 'Budget', color: '#F97316', bg: 'rgba(249,115,22,0.12)', action: () => onNavigateTab('budget') },
+            { icon: 'category', label: 'Categories', color: '#FBBF24', bg: 'rgba(251,191,36,0.12)', action: () => onNavigateTab('categories') },
           ].map(item => (
             <button
               key={item.label}
@@ -175,7 +174,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div style={{ background: 'var(--surface-container-lowest)', borderRadius: '1.25rem', padding: '20px', border: '1px solid var(--outline-variant)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <h2 style={{ fontSize: 17, fontWeight: 800, color: 'var(--on-surface)' }}>Top Categories</h2>
-            <span onClick={() => onNavigateTab('analytics')} style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', cursor: 'pointer' }}>See More ↓</span>
+            <span onClick={() => onNavigateTab('categories')} style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', cursor: 'pointer' }}>See More ↓</span>
           </div>
 
           {insights.length === 0 ? (
@@ -263,7 +262,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 const catName = category?.name || exp.categoryId;
                 const iconSymbol = getCategoryMaterialIcon(catName);
                 const style = getCategoryIconStyle(catName);
-                const isMine = !exp.userName || exp.userName === settings.userName;
 
                 return (
                   <div
@@ -276,15 +274,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     }}
                   >
                     {/* Icon avatar */}
-                    <div style={{ position: 'relative', marginRight: 14, flexShrink: 0 }}>
+                    <div style={{ marginRight: 14, flexShrink: 0 }}>
                       <div style={{ width: 46, height: 46, borderRadius: '50%', background: style.bg, color: style.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", fontSize: 22 }}>{iconSymbol}</span>
                       </div>
-                      {!isMine && (
-                        <div style={{ position: 'absolute', bottom: -2, right: -2, width: 16, height: 16, borderRadius: '50%', background: '#818CF8', border: '2px solid var(--surface-container-lowest)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8 }}>
-                          👤
-                        </div>
-                      )}
                     </div>
 
                     {/* Info */}
@@ -299,29 +292,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       )}
                       <div style={{ fontSize: 12, color: 'var(--on-surface-variant)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
                         <span>{formatDateDisplay(exp.date)}, {formatTimeDisplay(exp.time)} {exp.city ? `• ${exp.city}` : ''}</span>
-                        {exp.userName && !isMine && (
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: '9999px', background: 'rgba(129,140,248,0.12)', color: '#818CF8' }}>
-                            👤 {exp.userName}
-                          </span>
-                        )}
                       </div>
                     </div>
 
                     {/* Amount + edit/delete */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingLeft: 8, flexShrink: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: isMine ? 'var(--on-surface)' : '#818CF8' }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--on-surface)' }}>
                         -{formatCurrency(exp.amount, settings.currency)}
                       </div>
-                      {isMine && (
-                        <>
-                          <button onClick={() => onEditExpense(exp)} style={{ background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer', padding: 2 }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 17 }}>edit</span>
-                          </button>
-                          <button onClick={() => exp.id && deleteExpense(exp.id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', padding: 2 }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 17 }}>delete</span>
-                          </button>
-                        </>
-                      )}
+                      <button onClick={() => onEditExpense(exp)} style={{ background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer', padding: 2 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 17 }}>edit</span>
+                      </button>
+                      <button onClick={() => exp.id && deleteExpense(exp.id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', padding: 2 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 17 }}>delete</span>
+                      </button>
                     </div>
                   </div>
                 );

@@ -3,16 +3,12 @@ import { useExpenses } from '../../context/ExpenseContext';
 import type { Expense } from '../../types';
 import { DashboardView } from '../Dashboard/DashboardView';
 import { TimelineView } from '../Timeline/TimelineView';
-import { CalendarView } from '../Calendar/CalendarView';
-import { AnalyticsView } from '../Analytics/AnalyticsView';
 import { BudgetView } from '../Budget/BudgetView';
-import { ReportsView } from '../Reports/ReportsView';
 import { CategoriesView } from '../Categories/CategoriesView';
 import { SettingsView } from '../Settings/SettingsView';
 import { ExpenseFormModal } from '../ExpenseForm/ExpenseFormModal';
 import { SearchFilterModal } from '../SearchFilter/SearchFilterModal';
 import { OnboardingModal } from '../Onboarding/OnboardingModal';
-import { PinLockModal } from '../BackupSecurity/PinLockModal';
 
 export const NavigationShell: React.FC = () => {
   const { settings, lastDeleted, undoDelete } = useExpenses();
@@ -50,14 +46,8 @@ export const NavigationShell: React.FC = () => {
             onOpenFilterModal={() => setIsFilterModalOpen(true)}
           />
         );
-      case 'calendar':
-        return <CalendarView onEditExpense={openEditExpenseModal} />;
-      case 'analytics':
-        return <AnalyticsView />;
       case 'budget':
         return <BudgetView />;
-      case 'reports':
-        return <ReportsView />;
       case 'categories':
         return <CategoriesView />;
       case 'settings':
@@ -75,7 +65,6 @@ export const NavigationShell: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <PinLockModal />
       {!settings.hasCompletedOnboarding && <OnboardingModal />}
       
       {/* Stitch Glassmorphic Header with Exact Logo Image */}

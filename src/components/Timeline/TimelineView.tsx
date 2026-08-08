@@ -17,7 +17,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 }) => {
   const { filteredExpenses, categoriesMap, deleteExpense, settings, filter, setFilter } = useExpenses();
   const [activeChip, setActiveChip] = useState<string>('All');
-  const [searchInput, setSearchInput] = useState<string>('');
 
   // Group transactions by date heading (Today, Yesterday, Date)
   const groupedExpenses = useMemo(() => {
@@ -27,9 +26,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     const yesterdayStr = yesterday.toISOString().split('T')[0];
 
     const filtered = filteredExpenses.filter(exp => {
-      // Search text filter
-      if (searchInput) {
-        const q = searchInput.toLowerCase();
+      // Search text filter from global filter state
+      if (filter.searchQuery.trim()) {
+        const q = filter.searchQuery.toLowerCase();
         const cat = (categoriesMap.get(exp.categoryId)?.name || '').toLowerCase();
         const notes = (exp.notes || '').toLowerCase();
         const city = (exp.city || '').toLowerCase();
@@ -70,7 +69,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     });
 
     return Object.values(groups);
-  }, [filteredExpenses, categoriesMap, searchInput, activeChip]);
+  }, [filteredExpenses, categoriesMap, filter.searchQuery, activeChip]);
 
   return (
     <div style={{ paddingBottom: 100 }}>
@@ -93,8 +92,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             <input
               type="text"
               placeholder="Search transactions..."
-              value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
+              value={filter.searchQuery}
+              onChange={e => setFilter({ searchQuery: e.target.value })}
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -123,39 +122,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
             }}
           >
-            <span className="material-symbols-outlined">tune</span>
+            <span className="material-symbols-outlined">tune</span          >
           </button>
         </div>
-
-        {/* Partner Author Filter Segment */}
-        {settings.partnerCode && (
-          <div style={{ display: 'flex', background: 'var(--surface-container-high)', borderRadius: '9999px', padding: 4, marginTop: 10, border: '1px solid var(--outline-variant)' }}>
-            {[
-              { id: 'all', label: '👥 Combined' },
-              { id: 'mine', label: '👤 Mine' },
-              { id: 'partner', label: '💑 Partner' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setFilter({ authorFilter: tab.id as any })}
-                style={{
-                  flex: 1,
-                  padding: '6px 12px',
-                  background: (filter.authorFilter || 'all') === tab.id ? 'var(--primary)' : 'transparent',
-                  color: (filter.authorFilter || 'all') === tab.id ? 'var(--on-primary)' : 'var(--on-surface-variant)',
-                  borderRadius: '9999px',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Filter Chips */}
         <div
@@ -201,16 +170,13 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         {groupedExpenses.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 16px', background: 'var(--surface-container-lowest)', borderRadius: '1rem' }}>
             <div style={{ fontSize: 44, marginBottom: 12 }}>
-              {(filter.authorFilter || 'all') === 'partner' ? '💑' : '📝'}
+              📝
             </div>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--on-surface)', marginBottom: 8 }}>No transactions found</h3>
             <p style={{ fontSize: 14, color: 'var(--on-surface-variant)', marginBottom: 16 }}>
-              {(filter.authorFilter || 'all') === 'partner'
-                ? "Your partner hasn't added any expenses yet. They'll show up here automatically!"
-                : "We couldn't find any transactions matching your search criteria."}
+              We couldn't find any transactions matching your search criteria.
             </p>
-            {(filter.authorFilter || 'all') !== 'partner' && (
-              <button
+            <button
                 onClick={onOpenAddModal}
                 style={{
                   padding: '12px 24px',
@@ -224,8 +190,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               >
                 + Add Transaction
               </button>
-            )}
-          </div>
+            </div>
         ) : (
           groupedExpenses.map(group => (
             <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

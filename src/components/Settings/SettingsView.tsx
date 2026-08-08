@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Moon, Sun, Monitor, Lock, Download, Upload, RotateCcw, Bell, MapPin, DollarSign, Camera, Trash2, Link as LinkIcon, Users, RefreshCw, Copy, Check, Link2, Unlink } from 'lucide-react';
+import { Moon, Sun, Monitor, Download, Upload, RotateCcw, Bell, MapPin, DollarSign, Camera, Trash2, Link as LinkIcon } from 'lucide-react';
 import { useExpenses } from '../../context/ExpenseContext';
 import { useTheme, type ThemeMode } from '../../context/ThemeContext';
 import type { PaymentMethod } from '../../types';
@@ -32,18 +32,13 @@ const POPULAR_CURRENCIES = [
 const POPULAR_CITIES = ['Mumbai', 'Delhi', 'Bengaluru', 'London', 'New York', 'Dubai', 'Singapore', 'Tokyo'];
 
 export const SettingsView: React.FC = () => {
-  const { 
-    settings, 
-    updateSettings, 
-    categories, 
-    exportBackupJSON, 
-    importBackupJSON, 
-    resetAllData, 
-    partnerExpenses, 
-    syncPartnerRoom,
-    generateInviteCode,
-    redeemInviteCode,
-    unlinkPartner 
+  const {
+    settings,
+    updateSettings,
+    categories,
+    exportBackupJSON,
+    importBackupJSON,
+    resetAllData,
   } = useExpenses();
   const { theme, setTheme } = useTheme();
 
@@ -51,25 +46,11 @@ export const SettingsView: React.FC = () => {
   const [photoUrlInput, setPhotoUrlInput] = useState('');
   const [photoMsg, setPhotoMsg] = useState('');
 
-  const [partnerCodeInput, setPartnerCodeInput] = useState('');
-  const [partnerMsg, setPartnerMsg] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [myInviteCode, setMyInviteCode] = useState<string | null>(null);
-  const [inviteExpiresAt, setInviteExpiresAt] = useState<number | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isRedeeming, setIsRedeeming] = useState(false);
-
-  const [pinInput, setPinInput] = useState(settings.pinCode || '');
-  const [pinEnabled, setPinEnabled] = useState(settings.pinEnabled || false);
-  const [pinMsg, setPinMsg] = useState('');
-  const [backupMsg, setBackupMsg] = useState('');
-
   const [customCurrency, setCustomCurrency] = useState(settings.currency || '₹');
   const [cityInput, setCityInput] = useState(settings.city || 'Mumbai');
 
   const currentPhoto = settings.profilePhoto || DEFAULT_AVATAR;
 
-  // Handle uploading local photo file
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -88,7 +69,6 @@ export const SettingsView: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  // Handle custom image URL
   const handleSavePhotoUrl = async () => {
     if (!photoUrlInput.trim()) return;
     await updateSettings({ profilePhoto: photoUrlInput.trim() });
@@ -96,87 +76,19 @@ export const SettingsView: React.FC = () => {
     setPhotoUrlInput('');
   };
 
-  const handleGenerateCode = async () => {
-    setIsGenerating(true);
-    setPartnerMsg('');
-    try {
-      const res = await generateInviteCode();
-      setMyInviteCode(res.code);
-      setInviteExpiresAt(res.expiresAt);
-      setPartnerMsg(`Generated invite code: ${res.code} (Valid for 24h). Share it with your partner!`);
-    } catch (e) {
-      setPartnerMsg('Failed to generate invite code.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleRedeemCode = async () => {
-    const code = partnerCodeInput.trim().toUpperCase();
-    if (!code) return;
-    setIsRedeeming(true);
-    setPartnerMsg('');
-    try {
-      const res = await redeemInviteCode(code);
-      if (res.success) {
-        setPartnerCodeInput('');
-        setPartnerMsg('Successfully linked with partner!');
-      } else {
-        setPartnerMsg(res.error || 'Failed to redeem invite code.');
-      }
-    } catch (e) {
-      setPartnerMsg('Error linking partner.');
-    } finally {
-      setIsRedeeming(false);
-    }
-  };
-
-  const handleUnlink = async () => {
-    if (window.confirm('Are you sure you want to unlink from your partner? You will no longer see each other\'s expenses.')) {
-      await unlinkPartner();
-      setMyInviteCode(null);
-      setInviteExpiresAt(null);
-      setPartnerMsg('Unlinked from partner.');
-    }
-  };
-
-  const handleCopyCode = (codeToCopy: string) => {
-    if (codeToCopy) {
-      navigator.clipboard.writeText(codeToCopy);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  // Select preset avatar
   const handleSelectPreset = async (url: string) => {
     await updateSettings({ profilePhoto: url });
     setPhotoMsg('Preset avatar selected!');
   };
 
-  // Reset photo
   const handleResetPhoto = async () => {
     await updateSettings({ profilePhoto: DEFAULT_AVATAR });
     setPhotoMsg('Profile photo reset to default!');
   };
 
-  // Save User Name
   const handleSaveName = async () => {
     await updateSettings({ userName });
     setPhotoMsg('User name saved successfully!');
-  };
-
-  const handleSavePin = async () => {
-    if (pinEnabled && pinInput.length !== 4) {
-      setPinMsg('PIN must be exactly 4 digits');
-      return;
-    }
-
-    await updateSettings({
-      pinEnabled,
-      pinCode: pinEnabled ? pinInput : '',
-    });
-    setPinMsg('Security PIN settings updated successfully!');
   };
 
   const handleSaveCurrency = async (sym: string) => {
@@ -200,7 +112,7 @@ export const SettingsView: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    setBackupMsg('Backup downloaded successfully!');
+    setPhotoMsg('Backup downloaded successfully!');
   };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,9 +124,9 @@ export const SettingsView: React.FC = () => {
       const content = event.target?.result as string;
       const success = await importBackupJSON(content);
       if (success) {
-        setBackupMsg('Backup restored successfully!');
+        setPhotoMsg('Backup restored successfully!');
       } else {
-        setBackupMsg('Failed to restore backup file. Invalid format.');
+        setPhotoMsg('Failed to restore backup file. Invalid format.');
       }
     };
     reader.readAsText(file);
@@ -223,11 +135,9 @@ export const SettingsView: React.FC = () => {
   const handleResetData = async () => {
     if (window.confirm('Are you sure you want to reset all expense data to initial default state?')) {
       await resetAllData();
-      setBackupMsg('All data has been reset to defaults.');
+      setPhotoMsg('All data has been reset to defaults.');
     }
   };
-
-
 
   return (
     <div style={{ padding: '16px 16px 100px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -239,217 +149,6 @@ export const SettingsView: React.FC = () => {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--on-surface)', marginTop: 2 }}>
           Profile & Settings
         </h1>
-      </div>
-
-      {/* Partner & Household Sync Card */}
-      <div style={{ background: 'var(--surface-container-lowest)', borderRadius: '0.75rem', padding: 20, border: '1px solid var(--outline-variant)', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--on-surface)', fontSize: 16, fontWeight: 700 }}>
-            <Users size={20} color="var(--primary)" /> Partner & Household Sync
-          </div>
-          {settings.partnerCode && (
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: '9999px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--secondary)', border: '1px solid var(--secondary)' }}>
-              🟢 Connected: {settings.partnerCode}
-            </span>
-          )}
-        </div>
-
-        <p style={{ fontSize: 13, color: 'var(--on-surface-variant)', lineHeight: 1.5 }}>
-          Share and view expenses with your partner in real time (Flo app style). Expenses logged on one phone reflect on the partner's phone instantly.
-        </p>
-
-        {settings.partnerCode ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, background: 'var(--surface-container)', padding: 14, borderRadius: '0.5rem', border: '1px solid var(--outline-variant)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <img
-                  src={settings.partnerPhoto || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"}
-                  alt="Partner Avatar"
-                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
-                />
-                <div>
-                  <div style={{ fontSize: 11, color: 'var(--on-surface-variant)', fontWeight: 600 }}>LINKED PARTNER</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--on-surface)' }}>
-                    {settings.partnerName || 'Partner'} 💑
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onClick={() => handleCopyCode(settings.partnerCode || '')}
-                  className="active-press"
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '0.5rem',
-                    background: 'var(--surface-container-high)',
-                    border: '1px solid var(--outline-variant)',
-                    color: 'var(--on-surface)',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
-                >
-                  {copied ? <Check size={14} color="var(--secondary)" /> : <Copy size={14} />}
-                  {copied ? 'Copied' : 'Copy Room'}
-                </button>
-
-                <button
-                  onClick={syncPartnerRoom}
-                  className="active-press"
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '0.5rem',
-                    background: 'var(--surface-container-high)',
-                    border: '1px solid var(--outline-variant)',
-                    color: 'var(--on-surface)',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <RefreshCw size={14} /> Refresh
-                </button>
-              </div>
-            </div>
-
-            <div style={{ fontSize: 12, color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px dashed var(--outline-variant)', paddingTop: 8 }}>
-              <span>Partner Expenses Synced:</span>
-              <span style={{ fontWeight: 700, color: 'var(--on-surface)' }}>{partnerExpenses.length} items</span>
-            </div>
-
-            <button
-              onClick={handleUnlink}
-              className="active-press"
-              style={{
-                width: '100%',
-                padding: '8px',
-                borderRadius: '0.5rem',
-                background: 'rgba(244, 63, 94, 0.12)',
-                color: 'var(--error)',
-                border: '1px solid var(--error)',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-              }}
-            >
-              <Unlink size={14} /> Unlink Partner
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Generate Invite Code Section */}
-            <div style={{ background: 'var(--surface-container)', padding: 14, borderRadius: '0.5rem', border: '1px solid var(--outline-variant)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--on-surface)' }}>Option 1: Generate Single-Use Invite Code</div>
-              
-              {myInviteCode ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface-container-high)', padding: '10px 14px', borderRadius: '0.5rem', border: '1px solid var(--primary)' }}>
-                  <div>
-                    <div style={{ fontSize: 10, color: 'var(--on-surface-variant)', fontWeight: 600 }}>YOUR INVITE CODE (SINGLE-USE, 24H)</div>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.12em' }}>{myInviteCode}</div>
-                    {inviteExpiresAt && (
-                      <div style={{ fontSize: 10, color: 'var(--secondary)', fontWeight: 600 }}>
-                        Expires at {new Date(inviteExpiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleCopyCode(myInviteCode)}
-                    style={{ padding: '8px 12px', background: 'var(--primary)', color: 'var(--on-primary)', borderRadius: '0.5rem', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-                  >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handleGenerateCode}
-                  disabled={isGenerating}
-                  className="active-press"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    borderRadius: '0.5rem',
-                    background: 'var(--primary)',
-                    color: 'var(--on-primary)',
-                    border: 'none',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <RefreshCw size={16} /> {isGenerating ? 'Generating Code...' : 'Generate New Invite Code'}
-                </button>
-              )}
-            </div>
-
-            {/* Redeem Code Section */}
-            <div style={{ background: 'var(--surface-container)', padding: 14, borderRadius: '0.5rem', border: '1px solid var(--outline-variant)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--on-surface)' }}>Option 2: Enter Partner's Invite Code</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={partnerCodeInput}
-                  onChange={e => setPartnerCodeInput(e.target.value.toUpperCase())}
-                  placeholder="Enter 6-character Code (e.g. WAYNE7)"
-                  maxLength={8}
-                  style={{
-                    flex: 1,
-                    padding: '10px 14px',
-                    borderRadius: '0.5rem',
-                    background: 'var(--surface-container-high)',
-                    border: '1px solid var(--outline-variant)',
-                    color: 'var(--on-surface)',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    letterSpacing: '0.05em',
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  onClick={handleRedeemCode}
-                  disabled={isRedeeming}
-                  className="active-press"
-                  style={{
-                    padding: '10px 16px',
-                    borderRadius: '0.5rem',
-                    background: 'var(--secondary-container)',
-                    color: 'var(--on-secondary-container)',
-                    border: 'none',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <Link2 size={16} /> {isRedeeming ? 'Linking...' : 'Link'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {partnerMsg && (
-          <div style={{ fontSize: 12, fontWeight: 600, color: partnerMsg.includes('Failed') || partnerMsg.includes('Error') || partnerMsg.includes('Invalid') || partnerMsg.includes('expired') || partnerMsg.includes('cannot') ? 'var(--error)' : 'var(--secondary)', background: 'var(--surface-container-high)', padding: '8px 12px', borderRadius: '0.375rem' }}>
-            {partnerMsg}
-          </div>
-        )}
       </div>
 
       {/* Profile Photo & Account Info Editor Card */}
@@ -954,67 +653,6 @@ export const SettingsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Security PIN Lock */}
-      <div style={{ background: 'var(--surface-container-lowest)', borderRadius: '0.75rem', padding: 16, border: '1px solid var(--outline-variant)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Lock size={18} color="var(--primary)" />
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--on-surface)' }}>
-              Security & PIN Lock
-            </span>
-          </div>
-          <input
-            type="checkbox"
-            checked={pinEnabled}
-            onChange={e => setPinEnabled(e.target.checked)}
-            style={{ width: 18, height: 18, cursor: 'pointer' }}
-          />
-        </div>
-
-        {pinEnabled && (
-          <div style={{ marginTop: 12 }}>
-            <label style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>Set 4-Digit Security PIN</label>
-            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <input
-                type="password"
-                maxLength={4}
-                placeholder="4-digit PIN"
-                value={pinInput}
-                onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  borderRadius: '0.5rem',
-                  background: 'var(--surface-container)',
-                  border: '1px solid var(--outline-variant)',
-                  color: 'var(--on-surface)',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  textAlign: 'center',
-                  letterSpacing: '0.2em',
-                }}
-              />
-              <button
-                onClick={handleSavePin}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '0.5rem',
-                  background: 'var(--primary)',
-                  color: 'var(--on-primary)',
-                  border: 'none',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Save PIN
-              </button>
-            </div>
-            {pinMsg && <div style={{ fontSize: 12, color: 'var(--primary)', marginTop: 6 }}>{pinMsg}</div>}
-          </div>
-        )}
-      </div>
-
       {/* Notifications & Reminders */}
       <div style={{ background: 'var(--surface-container-lowest)', borderRadius: '0.75rem', padding: 16, border: '1px solid var(--outline-variant)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1042,9 +680,9 @@ export const SettingsView: React.FC = () => {
           Data Backup & Restore
         </label>
 
-        {backupMsg && (
+        {photoMsg && (
           <div style={{ padding: '8px 12px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary)', borderRadius: '0.5rem', fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
-            {backupMsg}
+            {photoMsg}
           </div>
         )}
 

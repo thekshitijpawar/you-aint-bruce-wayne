@@ -26,10 +26,9 @@ export interface Expense {
   notes?: string;
   createdAt: number;
   updatedAt?: number;
-  userId?: string;      // Identifier for author (e.g. spouse/child ID)
-  userName?: string;    // Display name of logger (e.g. Bruce vs Selina)
+  userId?: string;      // Identifier for author
+  userName?: string;    // Display name of logger
   userPhoto?: string;   // Avatar photo of logger
-  partnerCode?: string; // Shared Partner Room Code (e.g. WAYNE7)
 }
 
 export interface Budget {
@@ -48,7 +47,6 @@ export interface ExpenseFilter {
   city?: string;        // Filter by city
   minAmount: string;
   maxAmount: string;
-  authorFilter?: 'all' | 'mine' | 'partner'; // Filter by author
 }
 
 export type TimeRange = 'week' | 'month' | 'quarter' | 'year' | 'custom';
@@ -64,27 +62,11 @@ export interface SpendingStats {
 
 export type CurrencySymbol = string; // Allows complete freedom for any currency symbol or code
 
-export interface Partnership {
-  partnershipId: string;
-  partnerUserId: string;
-  partnerName: string;
-  partnerPhoto?: string;
-  roomCode: string;
-  status: 'active' | 'unlinked';
-  createdAt: number;
-}
-
 export interface AppSettings {
   theme?: 'light' | 'dark';
   profilePhoto?: string;
   userName?: string;
   userId?: string;                     // Unique device/user UUID
-  partnerCode?: string;                // Shared Household Sync Code (e.g. WAYNE7)
-  partnershipId?: string;              // Active Partnership ID
-  partnerUserId?: string;              // Linked Partner's Unique User ID
-  partnerName?: string;                // Linked Partner's Display Name
-  partnerPhoto?: string;               // Linked Partner's Photo
-  syncEnabled?: boolean;               // Whether partner sync is active
   hasCompletedOnboarding?: boolean;
   currency: CurrencySymbol;
   city: string;                        // User's default home city
@@ -93,6 +75,4 @@ export interface AppSettings {
   defaultCategory: string;
   eveningReminder: boolean;
   reminderTime: string;
-  pinEnabled: boolean;
-  pinCode: string;
 }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useExpenses } from '../../context/ExpenseContext';
+import { getCategoryMaterialIcon, getCategoryIconStyle } from '../UI/CategoryIcon';
 import { getTodayDateString } from '../../utils/formatters';
 
 interface ExpenseFormModalProps {
@@ -146,6 +147,8 @@ export const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
             <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>
               {categories.map(cat => {
                 const isSelected = selectedCatId === cat.id;
+                const iconSymbol = getCategoryMaterialIcon(cat.name);
+                const iconStyle = getCategoryIconStyle(cat.name);
                 return (
                   <button
                     key={cat.id}
@@ -168,8 +171,8 @@ export const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
                       transition: 'all 0.15s ease',
                     }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 20, fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0" }}>
-                      restaurant
+                    <span className="material-symbols-outlined" style={{ fontSize: 20, fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0", color: isSelected ? 'var(--on-primary)' : iconStyle.color }}>
+                      {iconSymbol}
                     </span>
                     {cat.name}
                   </button>

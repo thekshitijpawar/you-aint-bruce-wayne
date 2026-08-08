@@ -1,21 +1,11 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, seedDatabaseIfEmpty } from '../db/database';
 import type { Expense, Category, Budget, AppSettings, ExpenseFilter } from '../types';
 import { DEFAULT_CATEGORIES } from '../utils/mockData';
-import { 
-  fetchRoomExpenses, 
-  pushExpenseToPartner, 
-  deleteExpenseFromPartner,
-  createInviteCode as createInviteCodeApi,
-  redeemInviteCode as redeemInviteCodeApi,
-  unlinkPartnership as unlinkPartnershipApi
-} from '../services/partnerSyncService';
 
 interface ExpenseContextType {
   expenses: Expense[];
-  partnerExpenses: Expense[];
-  allExpenses: Expense[];
   categories: Category[];
   categoriesMap: Map<string, Category>;
   budget: Budget;
@@ -35,10 +25,6 @@ interface ExpenseContextType {
   updateSettings: (settingsData: Partial<AppSettings>) => Promise<void>;
   setFilter: (newFilter: Partial<ExpenseFilter>) => void;
   resetFilter: () => void;
-  syncPartnerRoom: () => Promise<void>;
-  generateInviteCode: () => Promise<{ code: string; expiresAt: number }>;
-  redeemInviteCode: (code: string) => Promise<{ success: boolean; error?: string }>;
-  unlinkPartner: () => Promise<void>;
   importBackupJSON: (jsonString: string) => Promise<boolean>;
   exportBackupJSON: () => Promise<string>;
   resetAllData: () => Promise<void>;
@@ -53,7 +39,6 @@ const defaultFilter: ExpenseFilter = {
   city: '',
   minAmount: '',
   maxAmount: '',
-  authorFilter: 'all',
 };
 
 const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined);
@@ -62,7 +47,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isSeeded, setIsSeeded] = useState(false);
   const [filter, setFilterState] = useState<ExpenseFilter>(defaultFilter);
   const [lastDeleted, setLastDeleted] = useState<Expense | null>(null);
-  const [partnerExpenses, setPartnerExpenses] = useState<Expense[]>([]);
 
   useEffect(() => {
     seedDatabaseIfEmpty().then(() => setIsSeeded(true));
@@ -75,7 +59,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const localExpenses = useMemo(() => expensesList || [], [expensesList]);
   const categories = useMemo(() => categoriesList || DEFAULT_CATEGORIES, [categoriesList]);
-  
+
   const categoriesMap = useMemo(() => {
     const map = new Map<string, Category>();
     categories.forEach(c => map.set(c.id, c));
@@ -95,15 +79,11 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       city: 'New York',
       userName: 'Valued User',
       userId: `user-${Date.now()}`,
-      partnerCode: '',
-      syncEnabled: false,
       firstDayOfWeek: 'Monday',
       defaultPaymentMethod: 'Cash',
       defaultCategory: 'food',
       eveningReminder: true,
       reminderTime: '21:00',
-      pinEnabled: false,
-      pinCode: '',
     };
 
     if (settingsList && settingsList.length > 0) {
@@ -124,66 +104,15 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [settings.theme]);
 
-  // Partner Room Polling Sync (Fast 3-Second Real-Time Sync like Flo app)
-  const syncPartnerRoom = useCallback(async () => {
-    if (!settings.partnerCode) {
-      setPartnerExpenses([]);
-      return;
-    }
-
-    const fetched = await fetchRoomExpenses(settings.partnerCode);
-    const localUserId = settings.userId || '';
-    const localUserName = settings.userName || '';
-
-    // Filter out expenses logged by current device so we only get partner's expenses
-    const roomPartnerItems = fetched.filter(item => {
-      if (item.userId && localUserId && item.userId === localUserId) return false;
-      if (item.userName && localUserName && item.userName === localUserName && (!item.userId || item.userId === localUserId)) return false;
-      return true;
-    });
-
-    setPartnerExpenses(roomPartnerItems);
-  }, [settings.partnerCode, settings.userId, settings.userName]);
-
-  useEffect(() => {
-    if (settings.partnerCode) {
-      syncPartnerRoom();
-      const interval = setInterval(syncPartnerRoom, 3000);
-      return () => clearInterval(interval);
-    } else {
-      setPartnerExpenses([]);
-    }
-  }, [settings.partnerCode, syncPartnerRoom]);
-
-  // All combined expenses (mine + partner's)
-  const allExpenses = useMemo(() => {
-    const combined = [...localExpenses];
-    const localCreatedAts = new Set(localExpenses.map(e => e.createdAt));
-
-    partnerExpenses.forEach(pe => {
-      if (!localCreatedAts.has(pe.createdAt)) {
-        combined.push(pe);
-      }
-    });
-
-    return combined.sort((a, b) => b.createdAt - a.createdAt);
-  }, [localExpenses, partnerExpenses]);
-
   const filteredExpenses = useMemo(() => {
-    return allExpenses.filter(exp => {
-      const isMine = !exp.userName || exp.userName === settings.userName;
-
-      if (filter.authorFilter === 'mine' && !isMine) return false;
-      if (filter.authorFilter === 'partner' && isMine) return false;
-
+    return localExpenses.filter(exp => {
       if (filter.searchQuery.trim()) {
         const query = filter.searchQuery.toLowerCase();
         const categoryName = categoriesMap.get(exp.categoryId)?.name.toLowerCase() || '';
         const notes = (exp.notes || '').toLowerCase();
         const city = (exp.city || '').toLowerCase();
-        const author = (exp.userName || '').toLowerCase();
         const amountStr = exp.amount.toString();
-        const matches = categoryName.includes(query) || notes.includes(query) || city.includes(query) || amountStr.includes(query) || author.includes(query);
+        const matches = categoryName.includes(query) || notes.includes(query) || city.includes(query) || amountStr.includes(query);
         if (!matches) return false;
       }
 
@@ -207,7 +136,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       return true;
     });
-  }, [allExpenses, filter, categoriesMap, settings.userName]);
+  }, [localExpenses, filter, categoriesMap]);
 
   const addExpense = async (expenseData: Omit<Expense, 'id' | 'createdAt'>): Promise<number> => {
     const createdAt = Date.now();
@@ -215,36 +144,21 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       city: settings.city || 'Home City',
       userId: settings.userId,
       userName: settings.userName || 'Valued User',
-      userPhoto: settings.profilePhoto,
-      partnerCode: settings.partnerCode,
       ...expenseData,
       createdAt,
     };
 
     const id = await db.expenses.add(newExpenseData);
-
-    if (settings.partnerCode) {
-      await pushExpenseToPartner(settings.partnerCode, newExpenseData);
-      syncPartnerRoom();
-    }
-
     return id as number;
   };
 
   const updateExpense = async (id: number, expenseData: Partial<Expense>): Promise<void> => {
-    const existing = await db.expenses.get(id);
     const updated = {
       ...expenseData,
       updatedAt: Date.now(),
     };
 
     await db.expenses.update(id, updated);
-
-    if (settings.partnerCode && existing) {
-      const fullUpdated = { ...existing, ...updated };
-      await pushExpenseToPartner(settings.partnerCode, fullUpdated);
-      syncPartnerRoom();
-    }
   };
 
   const deleteExpense = async (id: number): Promise<void> => {
@@ -252,16 +166,12 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (target) {
       setLastDeleted(target);
       await db.expenses.delete(id);
-
-      if (settings.partnerCode && target.createdAt) {
-        deleteExpenseFromPartner(settings.partnerCode, target.createdAt);
-      }
     }
   };
 
   const undoDelete = async (): Promise<void> => {
     if (lastDeleted) {
-      const { id, ...rest } = lastDeleted;
+      const { id: _id, ...rest } = lastDeleted;
       const createdAt = Date.now();
       const restored = {
         ...rest,
@@ -269,11 +179,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
 
       await db.expenses.add(restored);
-
-      if (settings.partnerCode) {
-        pushExpenseToPartner(settings.partnerCode, restored);
-      }
-
       setLastDeleted(null);
     }
   };
@@ -321,8 +226,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         defaultCategory: 'food',
         eveningReminder: true,
         reminderTime: '21:00',
-        pinEnabled: false,
-        pinCode: '',
         ...settingsData,
       });
     }
@@ -334,53 +237,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const resetFilter = () => {
     setFilterState(defaultFilter);
-  };
-
-  const generateInviteCode = async (): Promise<{ code: string; expiresAt: number }> => {
-    const res = await createInviteCodeApi(
-      settings.userId || 'unknown',
-      settings.userName || 'Partner',
-      settings.profilePhoto
-    );
-    return res;
-  };
-
-  const redeemInviteCode = async (code: string): Promise<{ success: boolean; error?: string }> => {
-    const res = await redeemInviteCodeApi(
-      code,
-      settings.userId || 'unknown',
-      settings.userName || 'Partner',
-      settings.profilePhoto
-    );
-
-    if (res.success && res.partnership) {
-      await updateSettings({
-        partnerCode: res.partnership.roomCode,
-        partnershipId: res.partnership.partnershipId,
-        partnerUserId: res.partnership.partnerUserId,
-        partnerName: res.partnership.partnerName,
-        partnerPhoto: res.partnership.partnerPhoto,
-        syncEnabled: true,
-      });
-      syncPartnerRoom();
-    }
-
-    return { success: res.success, error: res.error };
-  };
-
-  const unlinkPartner = async (): Promise<void> => {
-    if (settings.partnershipId) {
-      await unlinkPartnershipApi(settings.partnershipId);
-    }
-    await updateSettings({
-      partnerCode: '',
-      partnershipId: '',
-      partnerUserId: '',
-      partnerName: '',
-      partnerPhoto: '',
-      syncEnabled: false,
-    });
-    setPartnerExpenses([]);
   };
 
   const exportBackupJSON = async (): Promise<string> => {
@@ -439,8 +295,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <ExpenseContext.Provider
       value={{
         expenses: localExpenses,
-        partnerExpenses,
-        allExpenses,
         categories,
         categoriesMap,
         budget,
@@ -460,10 +314,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateSettings,
         setFilter,
         resetFilter,
-        syncPartnerRoom,
-        generateInviteCode,
-        redeemInviteCode,
-        unlinkPartner,
         importBackupJSON,
         exportBackupJSON,
         resetAllData,

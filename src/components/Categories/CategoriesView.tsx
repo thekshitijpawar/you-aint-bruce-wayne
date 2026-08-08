@@ -68,7 +68,7 @@ export const CategoriesView: React.FC = () => {
         });
       }
       setIsModalOpen(false);
-    } catch (err) {
+    } catch {
       setError('Failed to save category');
     }
   };
