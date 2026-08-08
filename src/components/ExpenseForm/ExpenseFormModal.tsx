@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useExpenses } from '../../context/ExpenseContext';
 import { getCategoryMaterialIcon, getCategoryIconStyle } from '../UI/CategoryIcon';
 import { getTodayDateString } from '../../utils/formatters';
+import { sanitizeText } from '../../utils/sanitize';
 
 interface ExpenseFormModalProps {
   isOpen: boolean;
@@ -51,7 +52,7 @@ export const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
         amount: num,
         categoryId: selectedCatId,
         date,
-        notes,
+        notes: sanitizeText(notes),
       });
     } else {
       await addExpense({
@@ -61,7 +62,7 @@ export const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
         time: new Date().toTimeString().slice(0, 5),
         paymentMethod: settings.defaultPaymentMethod || 'UPI',
         city: settings.city || 'Mumbai',
-        notes,
+        notes: sanitizeText(notes),
       });
     }
 

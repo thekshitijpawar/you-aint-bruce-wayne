@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Sparkles, User, DollarSign, MapPin, Camera, ArrowRight, Check } from 'lucide-react';
 import { useExpenses } from '../../context/ExpenseContext';
+import { sanitizeText } from '../../utils/sanitize';
 
 const PRESET_AVATARS = [
   { id: 'bruce', name: 'Bruce Wayne', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBFz6ZwYxKqDE_VcKK4pktAGb8GoX2lRz2rDkDvpzhHi3dZhL6d-N-fmFEa_fzBd4VfJ5USYJ3vEFeil_psZP0LY9MghFVGlqPXP_X9GGiOEVRLKap7BsN6-9tyM76Zi87mTXupIFFKGPtCQZCsHyQ8Xld43X_cpm_FGCO1I8xGztFq9FnUT24NSypW-mPUyW8P8Qw0tpY_sVaervsIqADLbXzKXrzNfXpnbJVH6dg4UGObeYVMUg' },
@@ -38,7 +39,11 @@ export const OnboardingModal: React.FC = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfilePhoto(reader.result as string);
+        const result = reader.result as string;
+        // Only allow data: URIs from file uploads (safe)
+        if (result.startsWith('data:image/')) {
+          setProfilePhoto(result);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -48,10 +53,10 @@ export const OnboardingModal: React.FC = () => {
     const activeCurrency = customCurrency.trim() ? customCurrency.trim() : currency;
     
     await updateSettings({
-      userName: userName.trim() || 'Valued User',
+      userName: sanitizeText(userName.trim() || 'Valued User'),
       profilePhoto,
       currency: activeCurrency,
-      city: city.trim() || 'Home City',
+      city: sanitizeText(city.trim() || 'Home City'),
       hasCompletedOnboarding: true,
     });
 

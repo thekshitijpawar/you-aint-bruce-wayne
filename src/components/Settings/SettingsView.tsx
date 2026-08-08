@@ -3,6 +3,7 @@ import { Moon, Sun, Monitor, Download, Upload, RotateCcw, Bell, MapPin, DollarSi
 import { useExpenses } from '../../context/ExpenseContext';
 import { useTheme, type ThemeMode } from '../../context/ThemeContext';
 import type { PaymentMethod } from '../../types';
+import { sanitizeText, sanitizeUrl } from '../../utils/sanitize';
 
 const DEFAULT_AVATAR = "https://lh3.googleusercontent.com/aida-public/AB6AXuBFz6ZwYxKqDE_VcKK4pktAGb8GoX2lRz2rDkDvpzhHi3dZhL6d-N-fmFEa_fzBd4VfJ5USYJ3vEFeil_psZP0LY9MghFVGlqPXP_X9GGiOEVRLKap7BsN6-9tyM76Zi87mTXupIFFKGPtCQZCsHyQ8Xld43X_cpm_FGCO1I8xGztFq9FnUT24NSypW-mPUyW8P8Qw0tpY_sVaervsIqADLbXzKXrzNfXpnbJVH6dg4UGObeYVMUg";
 
@@ -71,7 +72,19 @@ export const SettingsView: React.FC = () => {
 
   const handleSavePhotoUrl = async () => {
     if (!photoUrlInput.trim()) return;
-    await updateSettings({ profilePhoto: photoUrlInput.trim() });
+    const url = photoUrlInput.trim();
+    // Prevent XSS via javascript: or data: URIs
+    if (url.startsWith('javascript:') || url.startsWith('data:')) {
+      setPhotoMsg('Invalid image URL');
+      return;
+    }
+    try {
+      new URL(url); // Validate URL format
+    } catch {
+      setPhotoMsg('Invalid URL format');
+      return;
+    }
+    await updateSettings({ profilePhoto: url });
     setPhotoMsg('Profile photo updated from URL!');
     setPhotoUrlInput('');
   };
@@ -87,7 +100,7 @@ export const SettingsView: React.FC = () => {
   };
 
   const handleSaveName = async () => {
-    await updateSettings({ userName });
+    await updateSettings({ userName: sanitizeText(userName) });
     setPhotoMsg('User name saved successfully!');
   };
 
@@ -98,7 +111,7 @@ export const SettingsView: React.FC = () => {
 
   const handleSaveCity = async (cName: string) => {
     setCityInput(cName);
-    await updateSettings({ city: cName });
+    await updateSettings({ city: sanitizeText(cName) });
   };
 
   const handleExportBackup = async () => {
