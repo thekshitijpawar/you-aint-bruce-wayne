@@ -131,7 +131,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [updateSettings]);
 
-  const scheduleNotificationsRef = useRef<() => Promise<void>>();
+  const scheduleNotificationsRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   const scheduleNotifications = useCallback(async (): Promise<void> => {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -299,7 +299,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const updateSettings = async (settingsData: Partial<AppSettings>): Promise<void> => {
+  async function updateSettings(settingsData: Partial<AppSettings>): Promise<void> {
     const existing = await db.settings.get('default');
     if (existing) {
       await db.settings.update('default', settingsData);
@@ -319,7 +319,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         ...settingsData,
       });
     }
-  };
+  }
 
   const setFilter = (newFilter: Partial<ExpenseFilter>) => {
     setFilterState(prev => ({ ...prev, ...newFilter }));
