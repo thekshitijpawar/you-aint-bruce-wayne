@@ -21,7 +21,7 @@ export function sanitizeUrl(url: string): string {
 
 export function sanitizeFileName(name: string): string {
   return name
-    .replace(/[<>:"\/\\|?*\x00-\x1F]/g, '')
+    .replace(/[<>:"\\|?*\x00-\x1F]/g, '')
     .replace(/\.+/g, '.')
     .trim();
 }

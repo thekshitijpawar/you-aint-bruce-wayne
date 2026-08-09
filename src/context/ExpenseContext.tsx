@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, seedDatabaseIfEmpty } from '../db/database';
 import type { Expense, Category, Budget, AppSettings, ExpenseFilter } from '../types';
@@ -28,6 +28,8 @@ interface ExpenseContextType {
   importBackupJSON: (jsonString: string) => Promise<boolean>;
   exportBackupJSON: () => Promise<string>;
   resetAllData: () => Promise<void>;
+  requestNotificationPermission: () => Promise<void>;
+  scheduleNotifications: () => Promise<void>;
 }
 
 const defaultFilter: ExpenseFilter = {
@@ -84,6 +86,9 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       defaultCategory: 'food',
       eveningReminder: true,
       reminderTime: '21:00',
+      notificationEnabled: false,
+      notificationTimes: ['21:00'],
+      notificationFrequency: 1,
     };
 
     if (settingsList && settingsList.length > 0) {
@@ -91,7 +96,14 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (!s.userId) {
         s.userId = defaultSettings.userId;
       }
-      return { ...defaultSettings, ...s };
+      // Migrate old settings
+      return { 
+        ...defaultSettings, 
+        ...s,
+        notificationEnabled: s.notificationEnabled ?? false,
+        notificationTimes: s.notificationTimes ?? ['21:00'],
+        notificationFrequency: s.notificationFrequency ?? 1,
+      };
     }
     return defaultSettings;
   }, [settingsList]);
@@ -103,6 +115,81 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       document.documentElement.classList.add('dark');
     }
   }, [settings.theme]);
+
+  // Notification functions - defined before effects that use them
+  const requestNotificationPermission = useCallback(async (): Promise<void> => {
+    if (!('Notification' in window)) return;
+    
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        await updateSettings({ notificationEnabled: false });
+      }
+    } catch (e) {
+      console.error('Notification permission error:', e);
+      await updateSettings({ notificationEnabled: false });
+    }
+  }, [updateSettings]);
+
+  const scheduleNotificationsRef = useRef<() => Promise<void>>();
+
+  const scheduleNotifications = useCallback(async (): Promise<void> => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    
+    // Clear existing notifications (using a simple approach with setTimeout)
+    // In a real app, you'd use Service Workers or Push API for persistent notifications
+    
+    const times = settings.notificationTimes.slice(0, settings.notificationFrequency);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    times.forEach(timeStr => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const notificationTime = new Date(today);
+      notificationTime.setHours(hours, minutes, 0, 0);
+      
+      // If time has passed today, schedule for tomorrow
+      if (notificationTime <= now) {
+        notificationTime.setDate(notificationTime.getDate() + 1);
+      }
+      
+      const delay = notificationTime.getTime() - now.getTime();
+      
+      if (delay > 0 && delay < 24 * 60 * 60 * 1000) { // Within 24 hours
+        setTimeout(() => {
+          if (Notification.permission === 'granted') {
+            new Notification('You Ain\'t Bruce Wayne', {
+              body: 'Time to record your expenses! 💰',
+              icon: '/vite.svg',
+              tag: 'expense-reminder',
+              requireInteraction: false,
+            });
+          }
+          // Re-schedule for next day
+          scheduleNotificationsRef.current?.();
+        }, delay);
+      }
+    });
+  }, [settings.notificationTimes, settings.notificationFrequency]);
+
+  // Initialize the ref
+  useEffect(() => {
+    scheduleNotificationsRef.current = scheduleNotifications;
+  }, [scheduleNotifications]);
+
+  // Notification scheduling effect
+  useEffect(() => {
+    if (settings.notificationEnabled && 'Notification' in window) {
+      scheduleNotifications();
+    }
+  }, [settings.notificationEnabled, settings.notificationTimes, settings.notificationFrequency, scheduleNotifications]);
+
+  // Request notification permission on mount if enabled
+  useEffect(() => {
+    if (settings.notificationEnabled && 'Notification' in window && Notification.permission === 'default') {
+      requestNotificationPermission();
+    }
+  }, [settings.notificationEnabled, requestNotificationPermission]);
 
   const filteredExpenses = useMemo(() => {
     return localExpenses.filter(exp => {
@@ -226,6 +313,9 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         defaultCategory: 'food',
         eveningReminder: true,
         reminderTime: '21:00',
+        notificationEnabled: false,
+        notificationTimes: ['21:00'],
+        notificationFrequency: 1,
         ...settingsData,
       });
     }
@@ -317,6 +407,8 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         importBackupJSON,
         exportBackupJSON,
         resetAllData,
+        requestNotificationPermission,
+        scheduleNotifications,
       }}
     >
       {children}

@@ -79,7 +79,7 @@ export const OnboardingModal: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '24px 20px 32px 20px',
+        padding: 'calc(24px + var(--safe-top)) 20px calc(32px + var(--safe-bottom)) 20px',
         overflowY: 'auto',
       }}
     >

@@ -83,7 +83,7 @@ export const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
           padding: 0,
           borderRadius: '1.5rem 1.5rem 0 0',
           background: 'var(--surface)',
-          maxHeight: '92vh',
+          maxHeight: 'calc(92vh - var(--safe-bottom))',
         }}
       >
         {/* Header */}
@@ -100,6 +100,7 @@ export const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
             position: 'sticky',
             top: 0,
             zIndex: 20,
+            paddingTop: 'var(--safe-top)',
           }}
         >
           <button
@@ -303,6 +304,7 @@ export const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
               gap: 8,
               cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(79,70,229,0.3)',
+              marginBottom: 'var(--safe-bottom)',
             }}
           >
             Save Transaction

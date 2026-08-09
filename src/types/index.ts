@@ -75,4 +75,8 @@ export interface AppSettings {
   defaultCategory: string;
   eveningReminder: boolean;
   reminderTime: string;
+  // New notification settings
+  notificationEnabled: boolean;
+  notificationTimes: string[];         // Array of times in HH:mm format (24h)
+  notificationFrequency: number;       // Times per day (1-5)
 }

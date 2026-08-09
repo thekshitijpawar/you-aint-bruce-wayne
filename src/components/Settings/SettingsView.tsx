@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Moon, Sun, Monitor, Download, Upload, RotateCcw, Bell, MapPin, DollarSign, Camera, Trash2, Link as LinkIcon } from 'lucide-react';
+import { Moon, Sun, Monitor, Download, Upload, RotateCcw, Bell, MapPin, DollarSign, Camera, Trash2, Link as LinkIcon, Plus, Minus, Clock, CheckCircle2 } from 'lucide-react';
 import { useExpenses } from '../../context/ExpenseContext';
 import { useTheme, type ThemeMode } from '../../context/ThemeContext';
 import type { PaymentMethod } from '../../types';
@@ -40,6 +40,8 @@ export const SettingsView: React.FC = () => {
     exportBackupJSON,
     importBackupJSON,
     resetAllData,
+    requestNotificationPermission,
+    scheduleNotifications,
   } = useExpenses();
   const { theme, setTheme } = useTheme();
 
@@ -152,8 +154,76 @@ export const SettingsView: React.FC = () => {
     }
   };
 
+  // Notification helpers
+  const generateTimeSlots = (frequency: number, startTime: string = '21:00'): string[] => {
+    const times: string[] = [];
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const interval = Math.floor(24 / Math.max(1, frequency));
+    
+    for (let i = 0; i < frequency; i++) {
+      const hour = (startHour + i * interval) % 24;
+      const timeStr = `${hour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
+      times.push(timeStr);
+    }
+    return times;
+  };
+
+  const handleNotificationToggle = async (enabled: boolean) => {
+    await updateSettings({ notificationEnabled: enabled });
+    if (enabled) {
+      await requestNotificationPermission();
+      await scheduleNotifications();
+    }
+  };
+
+  const handleFrequencyChange = async (newFrequency: number) => {
+    const clampedFreq = Math.max(1, Math.min(5, newFrequency));
+    const newTimes = generateTimeSlots(clampedFreq, settings.notificationTimes[0] || '21:00');
+    await updateSettings({ 
+      notificationFrequency: clampedFreq,
+      notificationTimes: newTimes,
+    });
+    if (settings.notificationEnabled) {
+      await scheduleNotifications();
+    }
+  };
+
+  const handleTimeChange = async (index: number, newTime: string) => {
+    const newTimes = [...settings.notificationTimes];
+    newTimes[index] = newTime;
+    await updateSettings({ notificationTimes: newTimes });
+    if (settings.notificationEnabled) {
+      await scheduleNotifications();
+    }
+  };
+
+  const handleAddNotificationTime = async () => {
+    if (settings.notificationFrequency >= 5) return;
+    const newFrequency = settings.notificationFrequency + 1;
+    const newTimes = generateTimeSlots(newFrequency, settings.notificationTimes[0] || '21:00');
+    await updateSettings({ 
+      notificationFrequency: newFrequency,
+      notificationTimes: newTimes,
+    });
+    if (settings.notificationEnabled) {
+      await scheduleNotifications();
+    }
+  };
+
+  const handleRemoveNotificationTime = async (index: number) => {
+    if (settings.notificationFrequency <= 1) return;
+    const newTimes = settings.notificationTimes.filter((_, i) => i !== index);
+    await updateSettings({ 
+      notificationFrequency: newTimes.length,
+      notificationTimes: newTimes,
+    });
+    if (settings.notificationEnabled) {
+      await scheduleNotifications();
+    }
+  };
+
   return (
-    <div style={{ padding: '16px 16px 100px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ padding: '16px 16px calc(100px + var(--safe-bottom)) 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Header */}
       <div>
         <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -673,18 +743,215 @@ export const SettingsView: React.FC = () => {
             <Bell size={18} color="var(--tertiary)" />
             <div>
               <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--on-surface)' }}>
-                Evening Expense Reminder
+                Expense Reminders
               </span>
-              <div style={{ fontSize: 11, color: 'var(--on-surface-variant)' }}>"Did you record today's expenses?"</div>
+              <div style={{ fontSize: 11, color: 'var(--on-surface-variant)' }}>Get notified to log your expenses</div>
             </div>
           </div>
           <input
             type="checkbox"
-            checked={settings.eveningReminder}
-            onChange={e => updateSettings({ eveningReminder: e.target.checked })}
+            checked={settings.notificationEnabled}
+            onChange={e => handleNotificationToggle(e.target.checked)}
             style={{ width: 18, height: 18, cursor: 'pointer' }}
           />
         </div>
+
+        {settings.notificationEnabled && (
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Frequency Selector */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--on-surface-variant)' }}>
+                Reminders per day
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                <button
+                  onClick={() => handleFrequencyChange(settings.notificationFrequency - 1)}
+                  disabled={settings.notificationFrequency <= 1}
+                  className="active-press"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    background: settings.notificationFrequency <= 1 ? 'var(--surface-container)' : 'var(--primary)',
+                    color: settings.notificationFrequency <= 1 ? 'var(--on-surface-variant)' : 'var(--on-primary)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: settings.notificationFrequency <= 1 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <Minus size={18} />
+                </button>
+                <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--on-surface)', minWidth: 40, textAlign: 'center' }}>
+                  {settings.notificationFrequency}
+                </span>
+                <button
+                  onClick={() => handleFrequencyChange(settings.notificationFrequency + 1)}
+                  disabled={settings.notificationFrequency >= 5}
+                  className="active-press"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    background: settings.notificationFrequency >= 5 ? 'var(--surface-container)' : 'var(--primary)',
+                    color: settings.notificationFrequency >= 5 ? 'var(--on-surface-variant)' : 'var(--on-primary)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: settings.notificationFrequency >= 5 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <Plus size={18} />
+                </button>
+                <span style={{ fontSize: 12, color: 'var(--on-surface-variant)', marginLeft: 8 }}>
+                  (1-5 times daily)
+                </span>
+              </div>
+            </div>
+
+            {/* Time Slots */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--on-surface-variant)' }}>
+                Notification Times
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                {settings.notificationTimes.slice(0, settings.notificationFrequency).map((time, index) => (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Clock size={18} color="var(--primary)" />
+                    <input
+                      type="time"
+                      value={time}
+                      onChange={e => handleTimeChange(index, e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        borderRadius: '0.5rem',
+                        background: 'var(--surface-container)',
+                        border: '1px solid var(--outline-variant)',
+                        color: 'var(--on-surface)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        outline: 'none',
+                      }}
+                    />
+                    {settings.notificationFrequency > 1 && (
+                      <button
+                        onClick={() => handleRemoveNotificationTime(index)}
+                        className="active-press"
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          background: 'rgba(244, 63, 94, 0.12)',
+                          color: 'var(--error)',
+                          border: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span style={{ fontSize: 18, lineHeight: 1 }}>×</span>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              <button
+                onClick={handleAddNotificationTime}
+                disabled={settings.notificationFrequency >= 5}
+                className="active-press"
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '0.5rem',
+                  background: settings.notificationFrequency >= 5 ? 'var(--surface-container)' : 'var(--surface-container-high)',
+                  border: '1px solid var(--outline-variant)',
+                  color: settings.notificationFrequency >= 5 ? 'var(--on-surface-variant)' : 'var(--on-surface)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  cursor: settings.notificationFrequency >= 5 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <Plus size={14} /> Add Reminder Time
+              </button>
+              <button
+                onClick={() => {
+                  const newTimes = generateTimeSlots(settings.notificationFrequency, '21:00');
+                  updateSettings({ notificationTimes: newTimes });
+                }}
+                className="active-press"
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '0.5rem',
+                  background: 'var(--surface-container-high)',
+                  border: '1px solid var(--outline-variant)',
+                  color: 'var(--on-surface)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  cursor: 'pointer',
+                }}
+              >
+                <RotateCcw size={14} /> Reset to Evening
+              </button>
+            </div>
+
+            {/* Test Notification */}
+            <button
+              onClick={async () => {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('You Ain\'t Bruce Wayne', {
+                    body: 'Test notification - your expense reminder is working! 💰',
+                    icon: '/vite.svg',
+                    tag: 'expense-reminder-test',
+                  });
+                } else if ('Notification' in window) {
+                  const permission = await Notification.requestPermission();
+                  if (permission === 'granted') {
+                    new Notification('You Ain\'t Bruce Wayne', {
+                      body: 'Test notification - your expense reminder is working! 💰',
+                      icon: '/vite.svg',
+                      tag: 'expense-reminder-test',
+                    });
+                  }
+                }
+              }}
+              className="active-press"
+              style={{
+                marginTop: 8,
+                padding: '10px',
+                borderRadius: '0.5rem',
+                background: 'var(--primary)',
+                color: 'var(--on-primary)',
+                border: 'none',
+                fontSize: 13,
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                cursor: 'pointer',
+              }}
+            >
+              <CheckCircle2 size={16} /> Send Test Notification
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Backup & Data Reset */}
