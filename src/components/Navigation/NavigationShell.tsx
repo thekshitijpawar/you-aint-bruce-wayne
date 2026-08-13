@@ -89,7 +89,7 @@ export const NavigationShell: React.FC = () => {
       </header>
 
       {/* Main Content Area */}
-      <main style={{ paddingTop: 64, flex: 1, paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom))' }}>
+      <main style={{ paddingTop: 'calc(64px + var(--safe-top))', flex: 1, paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom))' }}>
         {renderTabContent()}
       </main>
 

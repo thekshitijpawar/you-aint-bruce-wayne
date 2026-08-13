@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, seedDatabaseIfEmpty } from '../db/database';
 import type { Expense, Category, Budget, AppSettings, ExpenseFilter } from '../types';
@@ -115,81 +115,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       document.documentElement.classList.add('dark');
     }
   }, [settings.theme]);
-
-  // Notification functions - defined before effects that use them
-  const requestNotificationPermission = useCallback(async (): Promise<void> => {
-    if (!('Notification' in window)) return;
-    
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        await updateSettings({ notificationEnabled: false });
-      }
-    } catch (e) {
-      console.error('Notification permission error:', e);
-      await updateSettings({ notificationEnabled: false });
-    }
-  }, [updateSettings]);
-
-  const scheduleNotificationsRef = useRef<() => Promise<void>>();
-
-  const scheduleNotifications = useCallback(async (): Promise<void> => {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    
-    // Clear existing notifications (using a simple approach with setTimeout)
-    // In a real app, you'd use Service Workers or Push API for persistent notifications
-    
-    const times = settings.notificationTimes.slice(0, settings.notificationFrequency);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    times.forEach(timeStr => {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      const notificationTime = new Date(today);
-      notificationTime.setHours(hours, minutes, 0, 0);
-      
-      // If time has passed today, schedule for tomorrow
-      if (notificationTime <= now) {
-        notificationTime.setDate(notificationTime.getDate() + 1);
-      }
-      
-      const delay = notificationTime.getTime() - now.getTime();
-      
-      if (delay > 0 && delay < 24 * 60 * 60 * 1000) { // Within 24 hours
-        setTimeout(() => {
-          if (Notification.permission === 'granted') {
-            new Notification('You Ain\'t Bruce Wayne', {
-              body: 'Time to record your expenses! 💰',
-              icon: '/vite.svg',
-              tag: 'expense-reminder',
-              requireInteraction: false,
-            });
-          }
-          // Re-schedule for next day
-          scheduleNotificationsRef.current?.();
-        }, delay);
-      }
-    });
-  }, [settings.notificationTimes, settings.notificationFrequency]);
-
-  // Initialize the ref
-  useEffect(() => {
-    scheduleNotificationsRef.current = scheduleNotifications;
-  }, [scheduleNotifications]);
-
-  // Notification scheduling effect
-  useEffect(() => {
-    if (settings.notificationEnabled && 'Notification' in window) {
-      scheduleNotifications();
-    }
-  }, [settings.notificationEnabled, settings.notificationTimes, settings.notificationFrequency, scheduleNotifications]);
-
-  // Request notification permission on mount if enabled
-  useEffect(() => {
-    if (settings.notificationEnabled && 'Notification' in window && Notification.permission === 'default') {
-      requestNotificationPermission();
-    }
-  }, [settings.notificationEnabled, requestNotificationPermission]);
 
   const filteredExpenses = useMemo(() => {
     return localExpenses.filter(exp => {
@@ -380,6 +305,118 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await db.settings.clear();
     await seedDatabaseIfEmpty();
   };
+
+  // Notification functions
+  const isNative = async (): Promise<boolean> => {
+    const { Capacitor } = await import('@capacitor/core');
+    return Capacitor.isNativePlatform();
+  };
+
+  const requestNotificationPermission = useCallback(async (): Promise<void> => {
+    try {
+      const native = await isNative();
+      
+      if (native) {
+        const { LocalNotifications } = await import('@capacitor/local-notifications');
+        const result = await LocalNotifications.requestPermissions();
+        if (result.display !== 'granted') {
+          await updateSettings({ notificationEnabled: false });
+        }
+      } else {
+        if (!('Notification' in window)) return;
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          await updateSettings({ notificationEnabled: false });
+        }
+      }
+    } catch (e) {
+      console.error('Notification permission error:', e);
+      await updateSettings({ notificationEnabled: false });
+    }
+  }, [updateSettings]);
+
+  const scheduleNotifications = useCallback(async (): Promise<void> => {
+    try {
+      const native = await isNative();
+      const times = settings.notificationTimes.slice(0, settings.notificationFrequency);
+      
+      if (native) {
+        const { LocalNotifications } = await import('@capacitor/local-notifications');
+        
+        // Cancel existing notifications
+        await LocalNotifications.cancel({ notifications: times.map((_, i) => ({ id: i + 1 })) });
+        
+        // Schedule new notifications
+        for (let i = 0; i < times.length; i++) {
+          const [hours, minutes] = times[i].split(':').map(Number);
+          const now = new Date();
+          const scheduledDate = new Date();
+          scheduledDate.setHours(hours, minutes, 0, 0);
+          
+          if (scheduledDate <= now) {
+            scheduledDate.setDate(scheduledDate.getDate() + 1);
+          }
+          
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                id: i + 1,
+                title: "You Ain't Bruce Wayne",
+                body: "Time to record your expenses! 💰",
+                schedule: { at: scheduledDate },
+                sound: 'default',
+                autoCancel: true
+              }
+            ]
+          });
+        }
+      } else {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        times.forEach(timeStr => {
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          const notificationTime = new Date(today);
+          notificationTime.setHours(hours, minutes, 0, 0);
+          
+          if (notificationTime <= now) {
+            notificationTime.setDate(notificationTime.getDate() + 1);
+          }
+          
+          const delay = notificationTime.getTime() - now.getTime();
+          
+          if (delay > 0 && delay < 24 * 60 * 60 * 1000) {
+            setTimeout(() => {
+              if (Notification.permission === 'granted') {
+                new Notification('You Ain\'t Bruce Wayne', {
+                  body: 'Time to record your expenses! 💰',
+                  icon: '/vite.svg',
+                  tag: 'expense-reminder',
+                  requireInteraction: false,
+                });
+              }
+            }, delay);
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Schedule notifications error:', e);
+    }
+  }, [settings.notificationTimes, settings.notificationFrequency]);
+
+  useEffect(() => {
+    if (settings.notificationEnabled) {
+      scheduleNotifications();
+    }
+  }, [settings.notificationEnabled, settings.notificationTimes, settings.notificationFrequency, scheduleNotifications]);
+
+  useEffect(() => {
+    if (settings.notificationEnabled && 'Notification' in window && Notification.permission === 'default') {
+      requestNotificationPermission();
+    }
+  }, [settings.notificationEnabled, requestNotificationPermission]);
 
   return (
     <ExpenseContext.Provider
